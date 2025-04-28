@@ -12,6 +12,9 @@ with the save chart prompt and end of song cutscenes, just to a lesser extent.
 Other than that, you should be good to go! There will be a to-do list below on things that I'd like to do with the randomizer
 in the future, but that does not guarantee that I can do those things or that they will be done soon.
 
+Also, I really haven't used Github too much and don't fully know what I'm doing so if you end up making a pull request or something then
+please keep that in mind!
+
 ## TO-DO:
 
 -Make the new Github repo prettier lol
