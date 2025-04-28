@@ -1,0 +1,245 @@
+import funkin.modding.module.Module;
+
+import funkin.save.Save;
+
+class RandomizerSave extends Module
+{
+
+    public var defaultSave = [
+
+        "autoActive" => true,
+        "debug" => false,
+
+        "openSetUpSubState" => true,
+        "saveChartPrompt" => true,
+
+        "trueRandomDirections" => false,
+        "trueRandomStackNotes" => false,
+
+        "noteQueueRemovalTime" => 0.1,
+        "doubleNoteQueueRemovalTime" => 0.14,
+        "tripleNoteQueueRemovalTime" => 0.1,
+
+        "maxNoteQueueLength" => -1,
+
+        "noteBiasIncrease" => 1,
+        "noteBiasDecrease" => 3,
+
+        "maxJackLength" => 3,
+        "maxTrillLength" => 4,
+        "maxWaveLength" => 5,
+        "maxCrossoverLength" => 6
+
+        "jackOdds" => 0.25,
+        "trillOdds" => 0.6,
+        "waveOdds" => 0.8,
+        "crossoverOdds" => 0.95,
+
+        "diminishingJackOdds" => 0,
+        "diminishingTrillOdds" => 0.1,
+        "diminishingWaveOdds" => 0.1,
+        "diminishingCrossoverOdds" => 0.05
+
+        "presets" => [
+            "Default" => [
+
+                "noteQueueRemovalTime" => 0.1,
+                "doubleNoteQueueRemovalTime" => 0.14,
+                "tripleNoteQueueRemovalTime" => 0.1,
+
+                "maxNoteQueueLength" => -1,
+
+                "noteBiasIncrease" => 1,
+                "noteBiasDecrease" => 3,
+
+                "maxJackLength" => 3,
+                "maxTrillLength" => 4,
+                "maxWaveLength" => 5,
+                "maxCrossoverLength" => 6
+
+                "jackOdds" => 0.25,
+                "trillOdds" => 0.6,
+                "waveOdds" => 0.8,
+                "crossoverOdds" => 0.95,
+
+                "diminishingJackOdds" => 0,
+                "diminishingTrillOdds" => 0.1,
+                "diminishingWaveOdds" => 0.1,
+                "diminishingCrossoverOdds" => 0.05
+
+            ],
+            "Alt One" => [
+
+                "noteQueueRemovalTime" => 0.12,
+                "doubleNoteQueueRemovalTime" => 0.16,
+                "tripleNoteQueueRemovalTime" => 0.1,
+
+                "maxNoteQueueLength" => -1,
+
+                "noteBiasIncrease" => 0,
+                "noteBiasDecrease" => 0,
+
+                "maxJackLength" => 3,
+                "maxTrillLength" => 4,
+                "maxWaveLength" => 7,
+                "maxCrossoverLength" => 8
+
+                "jackOdds" => 0.2,
+                "trillOdds" => 1,
+                "waveOdds" => 1,
+                "crossoverOdds" => 0.7,
+
+                "diminishingJackOdds" => 0.1,
+                "diminishingTrillOdds" => 0.8,
+                "diminishingWaveOdds" => 0.1,
+                "diminishingCrossoverOdds" => 0.1
+                
+            ],
+            "Legacy One" => [
+
+                "noteQueueRemovalTime" => 0.12,
+                "doubleNoteQueueRemovalTime" => 0.12,
+                "tripleNoteQueueRemovalTime" => 0.12,
+
+                "maxNoteQueueLength" => -1,
+
+                "noteBiasIncrease" => 0,
+                "noteBiasDecrease" => 0,
+
+                "maxJackLength" => 3,
+                "maxTrillLength" => 3,
+                "maxWaveLength" => 0,
+                "maxCrossoverLength" => 0,
+
+                "jackOdds" => 0.3,
+                "trillOdds" => 1,
+                "waveOdds" => 1,
+                "crossoverOdds" => 1,
+
+                "diminishingJackOdds" => 0.1,
+                "diminishingTrillOdds" => 0,
+                "diminishingWaveOdds" => 0,
+                "diminishingCrossoverOdds" => 0
+
+            ],
+            "Staircase Gamemode" => [
+                "noteQueueRemovalTime" => 0,
+                "doubleNoteQueueRemovalTime" => 0,
+                "tripleNoteQueueRemovalTime" => 0,
+
+                "maxNoteQueueLength" => -1,
+
+                "noteBiasIncrease" => 0,
+                "noteBiasDecrease" => 0,
+
+                "maxJackLength" => 1,
+                "maxTrillLength" => 2,
+                "maxWaveLength" => 3,
+                "maxCrossoverLength" => 0
+
+                "jackOdds" => 1,
+                "trillOdds" => 1,
+                "waveOdds" => 1,
+                "crossoverOdds" => 1
+
+                "diminishingJackOdds" => 0,
+                "diminishingTrillOdds" => 0,
+                "diminishingWaveOdds" => 0,
+                "diminishingCrossoverOdds" => 0
+
+            ],
+            "Jacks" => [
+
+                "noteQueueRemovalTime" => 0,
+                "doubleNoteQueueRemovalTime" => 0,
+                "tripleNoteQueueRemovalTime" => 0,
+
+                "noteBiasIncrease" => 0,
+                "noteBiasDecrease" => 0,
+
+                "maxJackLength" => 0,
+                "maxTrillLength" => 2,
+                "maxWaveLength" => 3,
+                "maxCrossoverLength" => 4
+
+                "jackOdds" => 1,
+                "trillOdds" => 1,
+                "waveOdds" => 1,
+                "crossoverOdds" => 1,
+
+                "diminishingJackOdds" => 0,
+                "diminishingTrillOdds" => 0,
+                "diminishingWaveOdds" => 0,
+                "diminishingCrossoverOdds" => 0
+
+            ],
+            "Blank Slate" => [
+                
+                "noteQueueRemovalTime" => 0,
+                "doubleNoteQueueRemovalTime" => 0,
+                "tripleNoteQueueRemovalTime" => 0,
+
+                "noteBiasIncrease" => 0,
+                "noteBiasDecrease" => 0,
+
+                "maxJackLength" => 0,
+                "maxTrillLength" => 0,
+                "maxWaveLength" => 0,
+                "maxCrossoverLength" => 0
+
+                "jackOdds" => 1,
+                "trillOdds" => 1,
+                "waveOdds" => 1,
+                "crossoverOdds" => 1,
+
+                "diminishingJackOdds" => 0,
+                "diminishingTrillOdds" => 0,
+                "diminishingWaveOdds" => 0,
+                "diminishingCrossoverOdds" => 0
+
+            ]
+        ]
+    ];
+
+    public var save;
+
+    public function new()
+    {
+        super("FNF Note Randomizer Save");
+        active = false;
+
+        if (!Save.instance.modOptions.exists("Note_Randomizer"))
+        {
+            resetSave();
+            return;
+        }
+
+        loadSave();
+    }
+
+    public function resetSave():Void
+    {
+        Save.instance.modOptions.set("Note_Randomizer", defaultSave);
+        save = defaultSave.copy();
+    }
+
+    public function loadSave():Void
+    {
+        save = Save.instance.modOptions.get("Note_Randomizer");
+        keepSaveUpToDate();
+    }
+
+    public function keepSaveUpToDate():Void
+    {
+        for (key in defaultSave.keys())
+        {
+            if (!save.exists(key)) save[key] = defaultSave[key];
+        }
+    }
+
+    public function saveSettings():Void
+    {
+        Save.instance.modOptions.set("Note_Randomizer", save);
+        Save.instance.flush();
+    }
+}

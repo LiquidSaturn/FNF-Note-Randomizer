@@ -1,0 +1,240 @@
+import flixel.FlxG;
+import flixel.FlxSprite;
+
+import funkin.audio.FunkinSound;
+
+import funkin.graphics.FunkinCamera;
+import funkin.graphics.FunkinSprite;
+
+import funkin.modding.base.ScriptedMusicBeatSubState;
+import funkin.modding.module.ModuleHandler;
+
+import funkin.Paths;
+
+import funkin.play.PlayState;
+
+import haxe.Json;
+import haxe.Unserializer;
+
+class SaveChartSubState extends ScriptedMusicBeatSubState
+{
+
+    var namingChartSave = false;
+
+    var TextMenuList = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.TextMenuList");
+    var AtlasText = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.AtlasText");
+
+    var camera;
+    var textList;
+
+    var saveText;
+    var chartText;
+
+    var randomizer;
+
+    override public function new()
+    {
+        super();
+
+        PlayState.instance.persistentUpdate = false;
+
+        randomizer = ModuleHandler.getModule("FNF Note Randomizer");
+
+        camera = new FunkinCamera("Save Chart SubState Camera", 0, 0, FlxG.width, FlxG.height);
+        FlxG.cameras.add(camera, true);
+        this.cameras = [camera];
+
+        var background = new FunkinSprite(0, 0);
+        background.makeSolidColor(FlxG.width, FlxG.height, 0xFF000000);
+        background.alpha = 0.5;
+        background.scrollFactor.set(0, 0);
+        background.updateHitbox();
+
+        add(background);
+
+        saveText = new AtlasText(0, 20, "Do you want to save", "bold");
+        saveText.x = (FlxG.width - saveText.width) / 2;
+
+        chartText = new AtlasText(0, 100, "this chart?", "bold");
+        chartText.x = (FlxG.width - chartText.width) / 2;
+
+        add(saveText);
+        add(chartText);
+
+        textList = new TextMenuList();
+
+        var yes = textList.createItem(0, 300, "Yes", "bold", () -> {openNameChartSubState();});
+        yes.x = (FlxG.width - yes.width) / 2;
+        yes.scrollFactor.set(0, 0);
+
+        var no = textList.createItem(0, 420, "No", "bold", () -> {exit();});
+        no.x = (FlxG.width - no.width) / 2;
+        no.scrollFactor.set(0, 0);
+
+        add(textList);
+    }
+
+    public function openNameChartSubState()
+    {
+        remove(saveText);
+        remove(chartText);
+        remove(textList);
+        openSubState(ScriptedMusicBeatSubState.init("NameChartSubState", this));
+    }
+
+    public function closeNameChartSubState()
+    {
+        closeSubState();
+        add(saveText);
+        add(chartText);
+        add(textList);
+    }
+
+    override public function update(elapsed:Float):Void
+    {
+        super.update(elapsed);
+
+        if (controls.BACK) exit();
+    }
+
+    public function exit():Void
+    {
+        PlayState.instance.closeSubState();
+        PlayState.instance.persistentUpdate = true;
+        randomizer.scriptSet("ranSaveChartPrompt", true);
+        PlayState.instance.endSong(true);
+    }
+}
+
+class NameChartSubState extends ScriptedMusicBeatSubState
+{
+
+    var state;
+    var Typer;
+
+    var saveName;
+
+    var TextMenuList = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.TextMenuList");
+    var AtlasText = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.AtlasText");
+
+    var FileSystem = Unserializer.DEFAULT_RESOLVER.resolveClass("sys.FileSystem");
+    var File = Unserializer.DEFAULT_RESOLVER.resolveClass("sys.io.File");
+
+    var textList;
+
+    var saveNameBG;
+    var saveNameText;
+
+    var saveThisChart;
+
+    override public function new(parentState)
+    {
+        super();
+        state = parentState;
+
+        Typer = ModuleHandler.getModule("Typer");
+        saveName = "";
+
+        saveThisChart = new AtlasText(0, 50, "Save This Chart", "bold");
+        saveThisChart.x = (FlxG.width - saveThisChart.width) / 2;
+
+        saveNameText = new AtlasText(0, 0, "Enter A Name For This Chart Save", "bold");
+        saveNameText.y = (FlxG.height - saveNameText.height) / 2;
+
+        saveNameBG = new FlxSprite();
+        saveNameBG.alpha = 0.5;
+
+        repositionSaveNameText();
+
+        textList = new TextMenuList();
+
+        var saveText = textList.createItem(0, 0, "Save", "bold", saveChart);
+        saveText.x = (FlxG.width - saveText.width) / 2;
+        saveText.y = (FlxG.height - saveText.height) / 2 + 250;
+
+        add(saveNameBG);
+        add(saveNameText);
+        add(saveThisChart);
+        add(textList);
+    }
+
+    override public function update(elapsed:Float):Void
+    {
+
+        if (FlxG.keys.justPressed.ESCAPE)
+        {
+            state.closeNameChartSubState();
+            FunkinSound.playOnce(Paths.sound("cancelMenu"));
+            return;
+        }
+
+        var newString = Typer.scriptCall("handleTypingOnUpdate", [saveName]);
+
+        if (newString != saveName)
+        {
+            saveName = newString;
+
+            if (newString == "") saveNameText.text = "Enter A Name For This Chart Save";
+            else
+            {   
+                //Spaces wouldn't be displayed until backspace was pressed unless I did this for some reason
+                saveNameText.text = saveName + "j";
+                repositionSaveNameText();
+                saveNameText.text = saveName;
+            }
+
+            repositionSaveNameText();
+        }
+
+        if (FlxG.keys.justPressed.ENTER) textList.accept();
+    }
+
+    public function saveChart():Void
+    {
+
+        var randomizer = ModuleHandler.getModule("FNF Note Randomizer");
+        var modFolderPath = randomizer.scriptGet("modFolderPath");
+
+        var chartFolder = modFolderPath + "/chartsaves/" + PlayState.instance.currentSong.id + "-" + PlayState.instance.currentVariation + "-" + PlayState.instance.currentDifficulty;
+
+        if (!FileSystem.exists(chartFolder)) FileSystem.createDirectory(chartFolder);
+
+        var playerNoteData = randomizer.scriptGet("playerNoteData");
+        var opponentNoteData = randomizer.scriptGet("opponentNoteData");
+
+        var playerData = [];
+        var opponentData = [];
+
+        for (noteData in playerNoteData) playerData.push(noteData.data);
+        for (noteData in opponentNoteData) opponentData.push(noteData.data);
+
+        var saveMap = [
+            "playerNoteData" => playerData,
+            "opponentNoteData" => opponentData
+        ];
+
+        File.saveContent(chartFolder + "/" + saveName + ".json", Json.stringify(saveMap));
+
+        state.exit();
+        return;
+    }
+
+    public function repositionSaveNameText():Void
+    {
+
+        saveNameText.x = (FlxG.width - saveNameText.width) / 2;
+        if (saveNameText.x < 10) saveNameText.x = 10;
+
+        var width = saveNameText.width + 40;
+        var height = saveNameText.height + 10;
+
+        saveNameBG.makeGraphic(width, height, 0xFFFFFFFF);
+
+        saveNameBG.x = (FlxG.width - saveNameBG.width) / 2;
+        if (saveNameBG.x < -10) saveNameBG.x = -10;
+
+        saveNameBG.y = (FlxG.height - saveNameBG.height) / 2 + 5;
+
+        saveNameBG.alpha = 0.75;
+    }
+}

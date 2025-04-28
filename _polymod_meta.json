@@ -1,0 +1,21 @@
+{
+  "title": "FNF Note Randomizer",
+  "description": "Randomizes the note positions in songs for infinite replayability! Now with functionality for saving and loading charts alongside ",
+  "contributors": [
+    {
+      "name": "LiquidSaturn",
+      "role": "Made it lol"
+    },
+    {
+      "name": "ThatWeirdGamer/Yoku/Jake",
+      "role": "Made the banner art on the GB page"
+    },
+    {
+      "name": "Cardroid",
+      "role": "Photoshopped the notes into the banner on the GB page"
+    }
+  ],
+  "api_version": "0.6.3",
+  "mod_version": "2.0.1",
+  "license": "Apache-2.0"
+}

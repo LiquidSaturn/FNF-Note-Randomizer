@@ -1,0 +1,173 @@
+import flixel.FlxG;
+import flixel.FlxSprite;
+
+import funkin.audio.FunkinSound;
+import funkin.graphics.FunkinCamera;
+
+import funkin.modding.base.ScriptedMusicBeatSubState;
+import funkin.modding.module.ModuleHandler;
+
+import funkin.Paths;
+
+import haxe.Unserializer;
+
+class SavePresetSubState extends ScriptedMusicBeatSubState
+{
+
+    var Typer;
+
+    var camera;
+
+    var textList;
+    var presetName = "";
+
+    var savePresetText;
+    var presetNameText;
+    var saveText;
+
+    var presetNameBG;
+
+    var TextMenuList = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.TextMenuList");
+    var AtlasText = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.AtlasText");
+
+    var saveModule;
+    var save;
+
+    public override function new()
+    {
+        super();
+
+        Typer = ModuleHandler.getModule("Typer");
+        saveModule = ModuleHandler.getModule("FNF Note Randomizer Save");
+
+        save = saveModule.scriptGet("save");
+
+        camera = new FunkinCamera("Save Randomizer Preset Camera", 0, 0, FlxG.width, FlxG.height);
+        FlxG.cameras.add(camera, true);
+        this.cameras = [camera];
+
+        presetName = "";
+
+        FunkinSound.playOnce(Paths.sound("scrollMenu"));
+
+        FlxG.state.persistentUpdate = false;
+    }
+
+    public override function create()
+    {
+        super.create();
+
+        savePresetText = new AtlasText(0, 100, "Save Randomizer Preset", "bold");
+        savePresetText.x = (FlxG.width - savePresetText.width) / 2;
+
+        presetNameText = new AtlasText(0, 0, "Enter Preset Name", "bold");
+        presetNameText.y = (FlxG.height - presetNameText.height) / 2;
+
+        presetNameBG = new FlxSprite();
+
+        repositionPresetNameText();
+
+        add(savePresetText);
+        add(presetNameBG);
+        add(presetNameText);
+
+        textList = new TextMenuList();
+
+        saveText = textList.createItem(0, 0, "Save", "bold", savePreset);
+        saveText.x = (FlxG.width - saveText.width) / 2;
+        saveText.y = (FlxG.height - saveText.height) / 2 + 200;
+        add(textList);
+    }
+
+    public override function update(elapsed:Float)
+    {
+
+        var newString = Typer.scriptCall("handleTypingOnUpdate", [presetName]);
+
+        if (newString != presetName)
+        {
+            presetName = newString;
+
+            if (newString == "") presetNameText.text = "Enter Preset Name";
+            else
+            {   
+                //Spaces wouldn't be displayed until backspace was pressed unless I did this for some reason
+                presetNameText.text = presetName + "j";
+                repositionPresetNameText();
+                presetNameText.text = presetName;
+            }
+
+            repositionPresetNameText();
+        }
+
+        if (FlxG.keys.justPressed.ESCAPE)
+        {
+            closeSelf();
+            FunkinSound.playOnce(Paths.sound("cancelMenu"));
+            return;
+        }
+
+        if (FlxG.keys.justPressed.ENTER) textList.accept();
+    }
+
+    public function savePreset()
+    {
+        save["presets"][presetName] = [
+
+            "noteQueueRemovalTime" => save["noteQueueRemovalTime"],
+            "doubleNoteQueueRemovalTime" => save["doubleNoteQueueRemovalTime"],
+            "tripleNoteQueueRemovalTime" => save["tripleNoteQueueRemovalTime"],
+
+            "maxNoteQueueLength" => save["maxNoteQueueLength"],
+
+            "noteBiasIncrease" => save["noteBiasIncrease"],
+            "noteBiasDecrease" => save["noteBiasDecrease"],
+
+            "maxJackLength" => save["maxJackLength"],
+            "maxTrillLength" => save["maxTrillLength"],
+            "maxWaveLength" => save["maxWaveLength"],
+
+            "jackOdds" => save["jackOdds"],
+            "trillOdds" => save["trillOdds"],
+            "waveOdds" => save["waveOdds"],
+
+            "diminishingJackOdds" => save["diminishingJackOdds"],
+            "diminishingTrillOdds" => save["diminishingTrillOdds"],
+            "diminishingWaveOdds" => save["diminishingWaveOdds"],
+
+        ];
+
+        saveModule.scriptCall("saveSettings");
+
+        closeSelf();
+        FunkinSound.playOnce(Paths.sound("cancelMenu"));
+    }
+
+    public function closeSelf()
+    {
+        FlxG.cameras.remove(camera);
+
+        FlxG.state.closeSubState();
+
+        FlxG.state.persistentUpdate = true;
+    }
+
+    public function repositionPresetNameText()
+    {
+
+        presetNameText.x = (FlxG.width - presetNameText.width) / 2;
+        if (presetNameText.x < 10) presetNameText.x = 10;
+
+        var width = presetNameText.width + 40;
+        var height = presetNameText.height + 10;
+
+        presetNameBG.makeGraphic(width, height, 0xFFFFFFFF);
+
+        presetNameBG.x = (FlxG.width - presetNameBG.width) / 2;
+        if (presetNameBG.x < -10) presetNameBG.x = -10;
+
+        presetNameBG.y = (FlxG.height - presetNameBG.height) / 2 + 5;
+
+        presetNameBG.alpha = 0.75;
+    }
+}

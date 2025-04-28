@@ -1,0 +1,681 @@
+import flixel.math.FlxRandom;
+
+import flixel.text.FlxText;
+import flixel.text.FlxTextBorderStyle;
+
+import funkin.modding.base.ScriptedMusicBeatSubState;
+
+import funkin.modding.module.ModuleHandler;
+import funkin.modding.module.Module;
+
+import funkin.Paths;
+
+import funkin.play.PlayStatePlaylist;
+import funkin.play.PlayState;
+
+import haxe.Json;
+import haxe.Unserializer;
+
+import Std;
+
+class Randomizer extends Module
+{
+
+    public var version = "2.0.0";
+    public var randomizerActive = false;
+
+    var saveModule;
+    var save;
+
+    var randomizer = new FlxRandom();
+
+    public var playerNoteData = [];
+    public var opponentNoteData = [];
+
+    var ranSetUpMenu = false;
+    var ranSaveChartPrompt = false;
+
+    public var readingFromChart = false;
+    public var randomizerSetUp = false;
+
+    public var currentSettings;
+    public var currentPreset = null;
+
+    public var modFolderPath;
+
+    var FileSystem = Unserializer.DEFAULT_RESOLVER.resolveClass("sys.FileSystem");
+    var File = Unserializer.DEFAULT_RESOLVER.resolveClass("sys.io.File");
+
+    public var usingPreset = false;
+
+    override public function new()
+    {
+        super("FNF Note Randomizer", 0);
+        modFolderPath = getModFolderPath();
+    }
+
+    override public function onStateChangeEnd(event):Void
+    {
+
+        randomizerActive = false;
+        randomizerSetUp = false;
+
+        ranSetUpMenu = false;
+        ranSaveChartPrompt = false;
+
+        readingFromChart = false;
+        usingPreset = false;
+        
+        if (save != null) currentSettings = save.copy();
+    }
+
+    public function onCountdownStart(event):Void
+    {
+
+        if (randomizerSetUp || event.eventCanceled || PlayState.instance.isInCutscene)
+        {
+            if (randomizerActive || readingFromChart) PlayState.instance.currentSong.validScore = false;
+            return;
+        }
+
+        if (save == null)
+        {
+            saveModule = ModuleHandler.getModule("FNF Note Randomizer Save");
+            save = saveModule.scriptGet("save");
+            currentSettings = save.copy();
+        }
+
+        if (currentSettings["openSetUpSubState"] && !ranSetUpMenu) 
+        {
+            PlayState.instance.openSubState(ScriptedMusicBeatSubState.init("RandomizerSetUpSubState"));
+            event.cancel();
+            return;
+        }
+
+        if (!currentSettings["openSetUpSubState"]) randomizerActive = currentSettings["autoActive"];
+        if (randomizerActive) PlayState.instance.currentSong.validScore = false;
+
+        setUp();
+    }
+
+    public function setUp():Void
+    {
+        var activeText = new FlxText(1085, 360, -1, "Note Randomizer Status: ON", 16);
+
+        if (!randomizerActive)
+        {
+            activeText.text = "Note Randomizer Status: OFF";
+            activeText.x = 1125;
+        }
+
+        if (readingFromChart)
+        {
+            activeText.text = "Note Randomizer Status: READING FROM SAVED CHART";
+            activeText.x = 1025;
+        }
+
+        activeText.setFormat(Paths.font("vcr.ttf"), 16, 0xFFFFFFFF, 0, FlxTextBorderStyle.OUTLINE, 0xFF000000);
+        activeText.borderSize = 1;
+        activeText.size = 16;
+        activeText.angle = -90;
+
+        activeText.cameras = [PlayState.instance.camHUD];
+        PlayState.instance.add(activeText);
+
+        randomizerSetUp = true;
+
+        if (!randomizerActive || readingFromChart) return;
+
+        var modeText = new FlxText(1125, 360, -1, "Mode: CURRENT SETTINGS", 16);
+
+        if (currentSettings["trueRandomDirections"])
+        {
+            modeText.text = "Mode: TRUE RANDOM";
+            modeText.x = 1145;
+        }
+
+        if (usingPreset)
+        {
+            modeText.text = "Mode: USING PRESET";
+            modeText.x = 1145;
+        }
+
+        modeText.setFormat(Paths.font("vcr.ttf"), 16, 0xFFFFFFFF, 0, FlxTextBorderStyle.OUTLINE, 0xFF000000);
+        modeText.borderSize = 1;
+        modeText.size = 16;
+        modeText.angle = -90;
+
+        modeText.cameras = [PlayState.instance.camHUD];
+        PlayState.instance.add(modeText);
+
+        maxNoteQueueLength = getMaxNoteQueueLength();
+
+        playerNoteData = [];
+        opponentNoteData = [];
+
+        randomize();
+    }
+
+    public function randomize():Void
+    {
+        if (currentSettings["trueRandomDirections"])
+        {
+            randomizeDirectionsWithTrueRandom();
+            return;
+        }
+
+        var noteQueue = [
+            -1 => null
+        ];
+        var noteBiases = [
+            -1 => null
+        ];
+
+        noteQueue.remove(-1);
+        noteBiases.remove(-1);
+
+        var playerStrumlineLength = PlayState.instance.playerStrumline.strumlineNotes.length;
+
+        for (noteData in PlayState.instance.playerStrumline.noteData)
+        {
+            randomizeDirection(noteData, playerNoteData, noteQueue, noteBiases, PlayState.instance.playerStrumline, [0, playerStrumlineLength - 1]);
+        }
+
+        noteQueue.clear();
+        noteBiases.clear();
+
+        var opponentStrumlineLength = PlayState.instance.opponentStrumline.strumlineNotes.length;
+
+        for (noteData in PlayState.instance.opponentStrumline.noteData)
+        {
+            randomizeDirection(noteData, opponentNoteData, noteQueue, noteBiases, PlayState.instance.opponentStrumline, [playerStrumlineLength, playerStrumlineLength + opponentStrumlineLength - 1]);
+        }
+
+        noteQueue.clear();
+        noteBiases.clear();
+    }
+
+    public function randomizeDirection(noteData, noteDataList, noteQueue, noteBiases, strumline, range):Void
+    {
+        var ignoreList = getIgnoreList(noteData, noteDataList, noteQueue, noteBiases, strumline, range);
+
+        noteData.data = randomizer.int(range[0], range[1], ignoreList);
+
+        addNoteToNoteQueue(noteData, noteDataList, noteQueue);
+        setNoteBiases(noteData, noteBiases);
+
+        noteDataList.push(noteData);
+        if (currentSettings["debug"]) trace("NOTE GENERATED: " + Std.string(noteData.data));
+    }
+
+    public function getIgnoreList(noteData, noteDataList, noteQueue, noteBiases, strumline, range):Array<Int>
+    {
+        var ignoreList = [];
+
+        addNotesThatShareStrumTimeToIgnoreList(ignoreList, noteData, noteDataList, strumline);
+        
+        clearOutNoteQueue(noteData, noteQueue);
+        for (data in noteQueue.keys()) pushToIgnoreList(ignoreList, strumline, data);
+
+        ignorePatterns(ignoreList, noteDataList, strumline);
+        accountForBiases(ignoreList, noteBiases, strumline, range);
+        
+        return ignoreList;
+    }
+    
+    public function addNotesThatShareStrumTimeToIgnoreList(ignoreList, noteData, noteDataList, strumline)
+    {
+        var index = noteDataList.length - 1;
+
+        while (index > -1)
+        {
+            var noteData2 = noteDataList[index];
+            if (noteData.time != noteData2.time) break;
+
+            pushToIgnoreList(ignoreList, strumline, noteData2.data);
+            if (currentSettings["debug"]) trace("ADDED NOTE " + Std.string(noteData2.data) + " TO THE IGNORE LIST BECAUSE IT PLAYS AT THE SAME TIME AS THE NOTE CURRENTLY BEING GENERATED");
+            index--;
+        }
+    }
+
+    public function clearOutNoteQueue(noteData, noteQueue):Void
+    {
+        var notesToRemoveFromNoteQueue = [];
+
+        for (key in noteQueue.keys()) if (noteData.time > noteQueue[key]) notesToRemoveFromNoteQueue.push(key);
+        for (key in notesToRemoveFromNoteQueue) noteQueue.remove(key);
+    }
+
+    public function ignorePatterns(ignoreList, noteDataList, strumline):Void
+    {
+        if (noteDataList.length > 0) addJackToIgnoreList(ignoreList, noteDataList, strumline);
+        if (noteDataList.length > 1) addTrillToIgnoreList(ignoreList, noteDataList, strumline);
+        if (noteDataList.length > 2) addWaveToIgnoreList(ignoreList, noteDataList, strumline);
+        if (noteDataList.length > 4) addCrossoverToIgnoreList(ignoreList, noteDataList, strumline);
+    }
+
+    public function addJackToIgnoreList(ignoreList, noteDataList, strumline):Void
+    {
+        var latestJackNote = noteDataList[noteDataList.length - 1];
+        var index = noteDataList.length - 1;
+        
+        var jackLength = getLengthOfNotePatternInNoteDataList(noteDataList, index, [latestJackNote.data], false, false);
+        
+        if (jackLength == currentSettings["maxJackLength"])
+        {
+            pushToIgnoreList(ignoreList, strumline, latestJackNote.data, false);
+            if (currentSettings["debug"]) trace("IGNORING JACK BECAUSE LIMIT WAS REACHED");
+            return;
+        }
+
+        if (determineIfPatternIsAllowed("jackOdds", "diminishingJackOdds", jackLength, 1)) return;
+
+        pushToIgnoreList(ignoreList, strumline, latestJackNote.data);
+        if (currentSettings["debug"]) trace("IGNORING JACK BECAUSE THE ODDS WERE TOO LOW");
+    }
+
+    public function addTrillToIgnoreList(ignoreList, noteDataList, strumline):Void
+    {
+        var latestJackNote = noteDataList[noteDataList.length - 1];
+        var index = noteDataList.length - 2;
+
+        index = getIndexOfFirstNoteNotInArray(noteDataList, index, [latestJackNote.data]);
+        if (index < 0) return;
+
+        var latestTrillNote = noteDataList[index];
+
+        var trillLength = getLengthOfNotePatternInNoteDataList(noteDataList, noteDataList.length - 1, [latestJackNote.data, latestTrillNote.data], false, false);
+
+        if (trillLength == currentSettings["maxTrillLength"])
+        {
+            pushToIgnoreList(ignoreList, strumline, latestTrillNote.data);
+            if (currentSettings["debug"]) trace("IGNORING TRILL BECAUSE LIMIT WAS REACHED");
+            return;
+        }
+
+        if (determineIfPatternIsAllowed("trillOdds", "diminishingTrillOdds", trillLength, 2)) return;
+
+        pushToIgnoreList(ignoreList, strumline, latestTrillNote.data);
+        if (currentSettings["debug"]) trace("IGNORING TRILL BECAUSE THE ODDS WERE TOO LOW");
+    }
+
+    public function addWaveToIgnoreList(ignoreList, noteDataList, strumline):Void
+    {
+        var latestJackNote = noteDataList[noteDataList.length - 1];
+        var index = noteDataList.length - 2;
+
+        index = getIndexOfFirstNoteNotInArray(noteDataList, index, [latestJackNote.data]);
+        if (index < 0) return;
+
+        var latestTrillNote = noteDataList[index];
+
+        index = getIndexOfFirstNoteNotInArray(noteDataList, index, [latestJackNote.data, latestTrillNote.data]);
+        if (index < 0) return;
+
+        var latestWaveNote = noteDataList[index];
+
+        var waveLength = getLengthOfNotePatternInNoteDataList(noteDataList, noteDataList.length - 1, [latestJackNote.data, latestTrillNote.data, latestWaveNote.data], true, false);
+
+        if (waveLength == currentSettings["maxWaveLength"])
+        {
+            pushToIgnoreList(ignoreList, strumline, latestWaveNote.data);
+            if (currentSettings["debug"]) trace("IGNORING WAVE BECAUSE LIMIT WAS REACHED");
+            return;
+        }
+
+        if (determineIfPatternIsAllowed("waveOdds", "diminishingWaveOdds", waveLength, 3)) return;
+
+        pushToIgnoreList(ignoreList, strumline, latestWaveNote.data);
+        if (currentSettings["debug"]) trace("IGNORING WAVE BECAUSE THE ODDS WERE TOO LOW");
+    }
+
+    public function addCrossoverToIgnoreList(ignoreList, noteDataList, strumline):Void
+    {
+        var latestJackNote = noteDataList[noteDataList.length - 1];
+        var index = noteDataList.length - 2;
+
+        index = getIndexOfFirstNoteNotInArray(noteDataList, index, [latestJackNote.data]);
+        if (index < 0) return;
+
+        var latestTrillNote = noteDataList[index];
+
+        index = getIndexOfFirstNoteNotInArray(noteDataList, index, [latestJackNote.data, latestTrillNote.data]);
+        if (index < 0) return;
+
+        var latestWaveNote = noteDataList[index];
+
+        var crossoverLength = getLengthOfNotePatternInNoteDataList(noteDataList, noteDataList.length - 1, [latestJackNote.data, latestTrillNote.data, latestWaveNote.data, latestTrillNote.data], true, true);
+        var crossoverLength2 = getLengthOfNotePatternInNoteDataList(noteDataList, noteDataList.length - 1, [latestJackNote.data, latestTrillNote.data, latestJackNote.data, latestWaveNote.data], true, true);
+
+        if (crossoverLength == currentSettings["maxCrossoverLength"])
+        {
+            pushToIgnoreList(ignoreList, strumline, latestTrillNote.data);
+            if (currentSettings["debug"]) trace("IGNORING CROSSOVER BECAUSE LIMIT WAS REACHED");
+            return;
+        }
+
+        if (crossoverLength2 == currentSettings["maxCrossoverLength"])
+        {
+            pushToIgnoreList(ignoreList, strumline, latestWaveNote.data);
+            if (currentSettings["debug"]) trace("IGNORING CROSSOVER BECAUSE LIMIT WAS REACHED");
+            return;
+        }
+
+        if (!determineIfPatternIsAllowed("crossoverOdds", "diminishingCrossoverOdds", crossoverLength, 4))
+        {
+            pushToIgnoreList(ignoreList, strumline, latestTrillNote.data);
+            if (currentSettings["debug"]) trace("IGNORING CROSSOVER BECAUSE THE ODDS WERE TOO LOW");
+            return;
+        }
+
+        if (determineIfPatternIsAllowed("crossoverOdds", "diminishingCrossoverOdds", crossoverLength2, 4)) return;
+        
+        pushToIgnoreList(ignoreList, strumline, latestWaveNote.data);
+        if (currentSettings["debug"]) trace("IGNORING CROSSOVER BECAUSE THE ODDS WERE TOO LOW");
+        
+    }
+
+    public function accountForBiases(ignoreList, noteBiases, strumline, range):Void
+    {
+        var index = randomizer.int(range[0], range[1]);
+
+        var indexAdditive = 1;
+        if (randomizer.int(0, 1) == 0) indexAdditive = -1;
+
+        for (number in 0...strumline.strumlineNotes.length)
+        {
+
+            var data = index + indexAdditive * number;
+
+            if (data < range[0]) data += strumline.strumlineNotes.length;
+            if (data > range[1]) data -= strumline.strumlineNotes.length;
+
+            if (!noteBiases.exists(data)) noteBiases[data] = 100;
+            if (randomizer.int(1, 100) > noteBiases[data]) pushToIgnoreList(ignoreList, strumline, data);
+        }
+    }
+
+    public function determineIfPatternIsAllowed(oddsKey, diminishingOddsKey, length, lengthOfPattern):Bool
+    {
+        return randomizer.float(0.001, 1) <= currentSettings[oddsKey] - currentSettings[diminishingOddsKey] * (length - lengthOfPattern);
+    }
+
+    public function addNoteToNoteQueue(noteData, noteDataList, noteQueue):Void
+    {
+        
+        var type = "single";
+
+        if (noteDataList.length > 0)
+        {
+            if (noteDataList[noteDataList.length - 1].time == noteData.time) type = "double";
+            if (noteDataList.length - 2 >= 0 && type == "double" && noteDataList[noteDataList.length - 2].time == noteData.time) type = "triple";
+            if (noteDataList.length - 3 >= 0 && type == "triple" && noteDataList[noteDataList.length - 3].time == noteData.time) type = "other";
+        }
+        else type = "single";
+
+        var key;
+        var extraNotes = 0;
+
+        switch (type)
+        {
+            case "double":
+            {
+                key = "doubleNoteQueueRemovalTime";
+                extraNotes = 1;
+            }
+            case "triple":
+            {
+                key = "tripleNoteQueueRemovalTime";
+                extraNotes = 2;
+            }
+            default: key = "noteQueueRemovalTime";
+        }
+
+        noteQueue[noteData.data] = noteData.time + noteData.length + (currentSettings[key] * 1000);
+
+        if (extraNotes > 0) for (indexSubtractor in 0...extraNotes)
+        {
+            note = noteDataList[noteDataList.length - 1 - indexSubtractor];
+            noteQueue[note.data] = note.time + note.length + (currentSettings[key] * 1000);
+        }
+    }
+
+    public function setNoteBiases(noteData, noteBiases, range):Void
+    {
+        for (key in noteBiases.keys())
+        {
+            if (key == noteData.data) noteBiases[key] -= currentSettings["noteBiasDecrease"];
+            else noteBiases[key] += currentSettings["noteBiasIncrease"];
+        }
+    }
+
+    public function randomizeDirectionsWithTrueRandom():Void
+    {
+
+        if (currentSettings["trueRandomStackNotes"])
+        {
+            for (noteData in PlayState.instance.playerStrumline.noteData)
+            {
+                noteData.data = randomizer.int(0, PlayState.instance.playerStrumline.strumlineNotes.length - 1);
+                playerNoteData.push(noteData);
+                if (currentSettings["debug"]) trace("GENERATED NOTE: " + Std.string(noteData.data));
+            }
+            for (noteData in PlayState.instance.opponentStrumline.noteData)
+            {
+                noteData.data = randomizer.int(PlayState.instance.playerStrumline.strumlineNotes.length, PlayState.instance.playerStrumline.strumlineNotes.length + PlayState.instance.opponentStrumline.strumlineNotes.length - 1);
+                opponentNoteData.push(noteData);
+                if (currentSettings["debug"]) trace("GENERATED NOTE: " + Std.string(noteData.data));
+            }
+            return;
+        }
+
+        var noteDataCache = [];
+
+        for (noteData in PlayState.instance.playerStrumline.noteData)
+        {
+
+            var notesToRemoveFromCache = [];
+
+            for (note in noteDataCache) if (noteData.time > note.time + note.length) notesToRemoveFromCache.push(note);
+            for (note in notesToRemoveFromCache) noteDataCache.remove(note);
+
+            var dataToIgnore = [for (noteData in noteDataCache) noteData.data];
+
+            if (currentSettings["debug"]) for (data in dataToIgnore) trace("IGNORING NOTE " + Std.string(data) + " BECAUSE IT PLAYS AT THE SAME TIME AS THE NOTE CURRENTLY BEING GENERATED");
+
+            noteData.data = randomizer.int(0, PlayState.instance.playerStrumline.strumlineNotes.length - 1, dataToIgnore);
+
+            playerNoteData.push(noteData);
+            if (currentSettings["debug"]) trace("GENERATED NOTE: " + Std.string(noteData.data));
+
+            noteDataCache.push(noteData);
+        }
+
+        noteDataCache = [];
+
+        for (noteData in PlayState.instance.opponentStrumline.noteData)
+        {
+
+            var notesToRemoveFromCache = [];
+
+            for (note in noteDataCache) if (noteData.time > note.time + note.length) notesToRemoveFromCache.push(note);
+            for (note in notesToRemoveFromCache) noteDataCache.remove(note);
+
+            var dataToIgnore = [for (noteData in noteDataCache) noteData.data];
+            
+            if (currentSettings["debug"]) for (data in dataToIgnore) trace("IGNORING NOTE " + Std.string(data) + " BECAUSE IT PLAYS AT THE SAME TIME AS THE NOTE CURRENTLY BEING GENERATED");
+
+            noteData.data = randomizer.int(PlayState.instance.playerStrumline.strumlineNotes.length, PlayState.instance.playerStrumline.strumlineNotes.length + PlayState.instance.opponentStrumline.strumlineNotes.length - 1, dataToIgnore);
+
+            opponentNoteData.push(noteData);
+            if (currentSettings["debug"]) trace("GENERATED NOTE: " + Std.string(noteData.data));
+
+            noteDataCache.push(noteData);
+        }
+    }
+
+    public function getMaxNoteQueueLength():Int
+    {
+        var maxNoteQueueLength = currentSettings["maxNoteQueueLength"];
+
+        if (maxNoteQueueLength > PlayState.instance.playerStrumline.strumlineNotes.length - 1) maxNoteQueueLength = PlayState.instance.playerStrumline.strumlineNotes.length - 1;
+
+        if (maxNoteQueueLength < 0) maxNoteQueueLength += PlayState.instance.playerStrumline.strumlineNotes.length;
+        if (maxNoteQueueLength < 0) maxNoteQueueLength = 0;
+
+        return maxNoteQueueLength;
+    }
+
+    public function pushToIgnoreList(ignoreList, strumline, data):Void
+    {
+        if (ignoreList.length >= strumline.strumlineNotes.length - 1) return;
+        if (ignoreList.contains(data)) return;
+    
+        ignoreList.push(data);
+    }
+
+    public function getIndexOfFirstNoteNotInArray(noteDataList, startIndex, array):Int
+    {   
+
+        var index = startIndex;
+
+        while (index >= 0)
+        {
+            if (!array.contains(noteDataList[index].data)) break;
+            index--;
+        }
+
+        return index;
+    }
+
+    public function getIndexOfFirstNoteInArray(noteDataList, startIndex, array):Int
+    {
+
+        var index = startIndex;
+
+        while (index >= 0)
+        {
+            if (array.contains(noteDataList[index].data)) break;
+            index--;
+        }
+
+        return index;
+    }
+
+    public function getLengthOfNotePatternInNoteDataList(noteDataList, startIndex, pattern, ignoreDoubles, ignoreJacks):Int
+    {
+
+        var index = startIndex;
+        var patternIndex = 0;
+        var length = 0;
+
+        while (index >= 0)
+        {
+            var previousPatternIndex = patternIndex - 1;
+            if (previousPatternIndex < 0) previousPatternIndex = pattern.length - 1;
+
+            if (noteDataList[index].data == pattern[patternIndex])
+            {
+                length++;
+                patternIndex++;
+                if (patternIndex == pattern.length) patternIndex = 0;
+
+                index--;
+                continue;
+            }
+            
+            if (noteDataList[index].data == pattern[previousPatternIndex] && !ignoreJacks)
+            {
+                index--;
+                continue;
+            }
+
+            if (ignoreDoubles) break;
+
+            var indexSubtractor = 1;
+            var foundNote = false;
+
+            while (index - indexSubtractor >= 0)
+            {
+                var noteData = noteDataList[index - indexSubtractor];
+                if (noteData.time != noteDataList[index].time) break;
+                if (noteData.data == pattern[patternIndex])
+                {
+                    foundNote = true;
+                    break;
+                }
+                indexSubtractor++;
+            }
+
+            if (foundNote)
+            {
+                index--;
+                continue;
+            }
+
+            var indexAdditive = 1;
+
+            while (index + indexAdditive < noteDataList.length)
+            {
+                var noteData = noteDataList[index + indexAdditive];
+                if (noteData.time != noteDataList[index].time) break;
+                if (noteData.data == pattern[patternIndex])
+                {
+                    foundNote = true;
+                    break;
+                }
+                indexAdditive++;
+            }
+
+            if (foundNote)
+            {
+                index--;
+                continue;
+            }
+
+            break;
+        }
+
+        return length;
+    }
+
+    override function onSongEnd(event)
+    {
+
+        if (randomizerActive && !ranSaveChartPrompt && currentSettings["saveChartPrompt"])
+        {
+            PlayState.instance.openSubState(ScriptedMusicBeatSubState.init("SaveChartSubState"));
+            event.cancel();
+            return;
+        }
+
+        if (PlayStatePlaylist.isStoryMode)
+        {
+            randomizerActive = false;
+            randomizerSetUp = false;
+
+            ranSetUpMenu = false;
+            ranSaveChartPrompt = false;
+
+            readingFromChart = false;
+            usingPreset = false;
+        }
+    }
+
+    public function getModFolderPath():String
+    {
+        for (folder in FileSystem.readDirectory("mods/"))
+        {
+            var fullPath = "mods/" + folder;
+            
+            if (!FileSystem.isDirectory(fullPath)) continue;
+            if (!FileSystem.exists(fullPath + "/_polymod_meta.json")) continue;
+
+            var metadata = Json.parse(File.getContent(fullPath + "/_polymod_meta.json"));
+
+            if (metadata.title != "FNF Note Randomizer") continue;
+
+            return fullPath;
+        }
+    }
+}
