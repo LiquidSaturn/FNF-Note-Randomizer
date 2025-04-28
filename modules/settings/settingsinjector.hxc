@@ -1,0 +1,24 @@
+import funkin.modding.module.Module;
+
+import funkin.ui.options.OptionsState;
+
+import Std;
+
+class SettingsInjector extends Module
+{
+
+    private var state;
+
+    public function new()
+    {
+        super("FNF Note Randomizer Settings Injector");
+    }
+
+    public function onStateChangeEnd(event)
+    {
+        state = event.targetState;
+        if (!Std.isOfType(state, OptionsState)) return;
+
+        
+    }
+}

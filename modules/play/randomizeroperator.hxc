@@ -1,0 +1,52 @@
+import funkin.modding.module.ModuleHandler;
+import funkin.modding.module.Module;
+
+import funkin.play.PlayState;
+
+import Std;
+
+/**
+   Operates everything revolving around the randomizer in PlayState.
+*/
+class RandomizerOperator extends Module
+{
+
+    public var randomizerModuleName:String = "FNF Note Randomizer";
+    public var randomizerSaveModuleName:String = "FNF Note Randomizer Save";
+
+    public var ranRandomizer = false;
+
+    public function new()
+    {
+        super("FNF Note Randomizer Operator");
+    }
+
+    public function onStateChangeEnd(event):Void
+    {
+        if (!Std.isOfType(event.targetState, PlayState)) resetVariables();
+    }
+
+    public function onCountdownStart(event):Void
+    {
+        setUpRandomizer();
+    }
+
+    public function resetVariables():Void
+    {
+        ranRandomizer = false;
+    }
+
+    public function setUpRandomizer():Void
+    {
+        PlayState.instance.currentSong.validScore = false;
+        var runOnCountdown = false;
+        if (!ranRandomizer || runOnCountdown) runRandomizer();
+    }
+
+    public function runRandomizer():Void
+    {
+        var randomizerModule = ModuleHandler.getModule(randomizerModuleName);
+        randomizerModule.scriptCall("randomize");
+        ranRandomizer = true;
+    }
+}

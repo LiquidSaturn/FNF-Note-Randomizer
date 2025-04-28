@@ -1,0 +1,317 @@
+import flixel.math.FlxRandom;
+
+import funkin.modding.module.ModuleHandler;
+import funkin.modding.module.Module;
+
+import funkin.play.PlayState;
+
+import haxe.Unserializer;
+
+import Std;
+
+/**
+    This is the note randomizer module, it handles all of the actual randomizing, but not the logic required to get to it.
+    The operator, which handles the rest of the process in PlayState, can be found below.
+
+    You can actually replace the main randomizer module if you so wish by changing which module the randomizer operator recognizes
+    as the randomizer.
+ */
+class Randomizer extends Module
+{
+    private var flxRandom:FlxRandom = new FlxRandom();
+
+    public var trueNoteRandomizerModule:String = "FNF True Note Randomizer";
+    public var saveModuleName:String = "FNF Note Randomizer Save";
+
+    public var save;
+    public var SongNoteData;
+
+    public function new()
+    {
+        super("FNF Note Randomizer");
+        active = false;
+    }
+
+    public function randomize():Void
+    {
+        save = ModuleHandler.getModule(saveModuleName).scriptGet("save");
+
+        if (save["trueRandomDirections"])
+        {
+            randomizerModule = ModuleHandler.getModule(trueNoteRandomizerModule);
+            randomizerModule.scriptSet("save", save);
+
+            ModuleHandler.getModule(trueNoteRandomizerModule).scriptCall("randomize");
+            return;
+        }
+
+        getSongNoteDataType();
+        if (SongNoteData == null)
+        {
+            trace("ERROR: Could not retrieve SongNoteData type!");
+            return;
+        }
+
+        randomizeDirections();
+    }
+
+    public function randomizeDirections():Void
+    {
+
+    }
+
+    public function getSongNoteDataType():Void
+    {
+        if (playerStrumline.noteData.length > 0) SongNoteData = Type.getClass(playerStrumline.noteData[0]);
+        if (opponentStrumline.noteData.length > 0) SongNoteData = Type.getClass(opponentStrumline.noteData[0]);
+    }
+}
+
+class TrueRandomizer extends Module
+{
+
+    private var flxRandom:FlxRandom = new FlxRandom();
+
+    private var playerStrumline;
+    private var opponentStrumline;
+
+    public var Type = Unserializer.DEFAULT_RESOLVER.resolveClass("Type");
+    public var SongNoteData = null;
+
+    private var newNotesGenerated:Int = 0; // Stored as an int 
+
+    private var currentHoldNotes:Array<Map<String, Dynamic>> = [];
+
+    public var generateHoldNotes:Bool;
+    public var generateNewNotes:Bool;
+
+    public var save;
+
+    public function new()
+    {
+        super("FNF True Note Randomizer");
+        active = false;
+    }
+
+    public function randomize():Void
+    {
+        playerStrumline = PlayState.instance.playerStrumline;
+        opponentStrumline = PlayState.instance.opponentStrumline;
+
+        getSongNoteDataType();
+        if (SongNoteData == null)
+        {
+            trace("ERROR: Could not retrieve SongNoteData type!");
+            return;
+        }
+
+        generateHoldNotes = save["generateHoldNotes"];
+        generateNewNotes = save["generateNewNotes"];
+
+        if (save["trueRandomStackNotes"])
+        {
+            randomizeWithStack();
+            return;
+        }
+
+        var dataBounds = [0, playerStrumline.strumlineNotes.length - 1];
+
+        for (index in 0...playerStrumline.noteData.length)
+        {
+            var newIndex = index + newNotesGenerated;
+            var noteData = playerStrumline.noteData[newIndex];
+
+            cleanseCurrentHoldNotes(noteData.time);
+            var currentStrumTimeData = getCurrentStrumTimeDataOfStrumline(playerStrumline, newIndex, noteData.time);
+            randomizeNote(playerStrumline, newIndex, currentStrumTimeData, dataBounds);
+        }
+
+        newNotesGenerated = 0;
+
+        dataBounds = [playerStrumline.strumlineNotes.length, playerStrumline.strumlineNotes.length + opponentStrumline.strumlineNotes.length - 1];
+        currentHoldNotes = [];
+
+        for (index in 0...opponentStrumline.noteData.length)
+        {
+            var newIndex = index + newNotesGenerated;
+            var noteData = opponentStrumline.noteData[newIndex];
+
+            cleanseCurrentHoldNotes(noteData.time);
+            var currentStrumTimeData = getCurrentStrumTimeDataOfStrumline(opponentStrumline, newIndex, noteData.time);
+            randomizeNote(opponentStrumline, newIndex, currentStrumTimeData, dataBounds);
+        }
+
+        newNotesGenerated = 0;
+        currentHoldNotes = [];
+    }
+
+    public function randomizeNote(strumline, index, currentStrumTimeData, dataBounds):Void
+    {
+
+        var ignoreList = currentStrumTimeData.concat([for (holdNote in currentHoldNotes) if (!currentStrumTimeData.contains(holdNote["data"])) holdNote["data"]]);
+
+        var noteData = strumline.noteData[index];
+
+        if (ignoreList.length >= strumline.strumlineNotes.length)
+        {
+            if (currentStrumTimeData >= strumline.strumlineNotes.length)
+            {
+                strumline.noteData.remove(noteData);
+                newNotesGenerated--;
+                return;
+            }
+            ignoreList = currentStrumTimeData; // Fallback to prioritize placing a note
+            trace("FALLBACK");
+        }
+
+        noteData.data = flxRandom.int(dataBounds[0], dataBounds[1], ignoreList);
+        currentStrumTimeData.push(noteData.data);
+        ignoreList.push(noteData.data);
+
+        if (generateHoldNotes && currentHoldNotes.length < strumline.strumlineNotes.length && flxRandom.int(1, 20) == 20) setToHoldNote(strumline, noteData, index);
+
+        if (noteData.length > 0)
+            currentHoldNotes.push(
+                [
+                    "data" => noteData.data,
+                    "endTime" => noteData.time + noteData.length
+                ]
+            );
+
+        if (!generateNewNotes || currentStrumTimeData.length + currentHoldNotes.length >= strumline.strumlineNotes.length) return;
+
+        while (ignoreList.length < strumline.strumlineNotes.length && flxRandom.int(1, 10) == 10)
+        {
+            var generatedNoteData = new SongNoteData(noteData.time, flxRandom.int(dataBounds[0], dataBounds[1], ignoreList));
+
+            strumline.noteData.insert(index, generatedNoteData);
+            currentStrumTimeData.push(generatedNoteData.data);
+            ignoreList.push(generatedNoteData.data);
+
+            newNotesGenerated++;
+
+            if (generateHoldNotes && currentHoldNotes.length < strumline.strumlineNotes.length && flxRandom.int(1, 20) == 20) setToHoldNote(strumline, noteData, index);
+        }
+    }
+
+    /**
+        Handles all randomization when notes are allowed to stack directly on top of one another
+     */
+    public function randomizeWithStack():Void
+    {
+
+        for (index in 0...playerStrumline.noteData.length)
+        {
+            var newIndex = index + newNotesGenerated;
+
+            var noteData = playerStrumline.noteData[newIndex];
+            noteData.data = flxRandom.int(0, playerStrumline.strumlineNotes.length - 1);
+
+            if (generateHoldNotes && flxRandom.int(1, 20) == 20) noteData.length = flxRandom.int(200, 900);
+
+            var notesGeneratedWithThisStrumTime = 0;
+            while (generateNewNotes && notesGeneratedWithThisStrumTime < playerStrumline.strumlineNotes.length - 1 && flxRandom.int(1, 10) == 10)
+            {
+                var newNoteData = new SongNoteData(noteData.time, flxRandom.int(0, playerStrumline.strumlineNotes.length - 1));
+                if (generateHoldNotes && flxRandom.int(1, 20) == 20) newNoteData.length = flxRandom.int(200, 900);
+                playerStrumline.noteData.insert(newIndex, newNoteData);
+                newNotesGenerated++;
+            }
+        }
+        
+        newNotesGenerated = 0;
+
+        for (index in 0...opponentStrumline.noteData.length)
+        {
+            var newIndex = index + newNotesGenerated;
+
+            var strumlineNotesEndData = playerStrumline.strumlineNotes.length + opponentStrumline.strumlineNotes.length - 1;
+
+            var noteData = opponentStrumline.noteData[newIndex];
+            noteData.data = flxRandom.int(playerStrumline.strumlineNotes.length, strumlineNotesEndData);
+
+            if (generateHoldNotes && flxRandom.int(1, 20) == 20) noteData.length = flxRandom.int(200, 900);
+
+            var notesGeneratedWithThisStrumTime = 0;
+            while (generateNewNotes && notesGeneratedWithThisStrumTime < opponentStrumline.strumlineNotes.length - 1 && flxRandom.int(1, 10) == 10)
+            {
+                var newNoteData = new SongNoteData(noteData.time, flxRandom.int(playerStrumline.strumlineNotes.length, strumlineNotesEndData));
+                if (generateHoldNotes && flxRandom.int(1, 20) == 20) newNoteData.length = flxRandom.int(200, 900);
+                opponentStrumline.noteData.insert(newIndex, newNoteData);
+                newNotesGenerated++;
+            }
+        }
+        
+        newNotesGenerated = 0;
+    }
+
+    public function setToHoldNote(strumline, noteData, index):Void
+    {
+        var cap = flxRandom.int(200, 1500);
+        noteData.length = flxRandom.int(200, cap);
+
+        var noteCheckList = [];
+        for (noteIndex in index + 1...strumline.noteData.length)
+        {
+            var currentNoteData = strumline.noteData[noteIndex];
+            if (noteCheckList.length < 1 || noteCheckList[0].time != currentNoteData.time)
+            {
+                if (currentNoteData.time > noteData.time + noteData.length) return;
+                noteCheckList = [currentNoteData];
+                continue;
+            }
+            noteCheckList.push(currentNoteData);
+            if (noteCheckList.length >= strumline.strumlineNotes.length)
+            {
+                noteData.length = currentNoteData.time - noteData.time - 20;
+                return;
+            }
+        }
+    }
+
+    /**
+        Gets the data for the directions of all of the notes that share the current strumTime,
+        does NOT include the noteData at the startIndex.
+     */
+    public function getCurrentStrumTimeDataOfStrumline(strumline, startIndex, strumTime):Array<Int>
+    {
+        var strumTimeData = [];
+
+        if (startIndex != strumline.noteData.length - 1)
+            for (index in startIndex + 1...strumline.noteData.length)
+            {
+                var noteData = strumline.noteData[index];
+                if (noteData.time != strumTime) break;
+                strumTimeData.push(noteData.data);
+            }
+
+        if (startIndex != 0)
+            for (indexSubtractor in 1...startIndex + 1)
+            {
+                var noteData = strumline.noteData[startIndex - indexSubtractor];
+                if (noteData.time != strumTime) break;
+                strumTimeData.push(noteData.data);
+            }
+
+        return strumTimeData;
+    }
+
+    public function cleanseCurrentHoldNotes(time):Void
+    {
+        var holdNotesRemoved = 0;
+        for (index in 0...currentHoldNotes.length)
+        {
+            holdNote = currentHoldNotes[index - holdNotesRemoved];
+            if (time <= holdNote["endTime"]) continue;
+
+            currentHoldNotes.remove(holdNote);
+            holdNotesRemoved++;
+        }
+    }
+
+    public function getSongNoteDataType():Void
+    {
+        if (playerStrumline.noteData.length > 0) SongNoteData = Type.getClass(playerStrumline.noteData[0]);
+        if (opponentStrumline.noteData.length > 0) SongNoteData = Type.getClass(opponentStrumline.noteData[0]);
+    }
+}
