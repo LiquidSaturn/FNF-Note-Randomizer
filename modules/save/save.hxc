@@ -34,7 +34,7 @@ class RandomizerSave extends Module
     {
         for (key in defaultSave["presets"]["Default"].keys())
         {
-            if (!save["presets"][presetName].exists(key)) save["presets"][presetName][key] = defaultSave["presets"]["Default"][key]
+            if (!save["presets"][presetName].exists(key)) save["presets"][presetName][key] = defaultSave["presets"]["Default"][key];
         }
     }
 
