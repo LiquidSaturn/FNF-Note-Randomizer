@@ -1,0 +1,33 @@
+import flixel.FlxG;
+
+import funkin.graphics.FunkinCamera;
+
+import funkin.modding.base.ScriptedMusicBeatSubState;
+
+class RandomizerSetupSubState extends ScriptedMusicBeatSubState
+{
+    public function create():Void
+    {
+        trace("h");
+
+        camera = new FunkinCamera("Randomizer Setup SubState Camera", 0, 0, FlxG.width, FlxG.height);
+
+        FlxG.cameras.add(camera);
+        this.cameras = [camera];
+
+        var background = new FunkinSprite(0, 0);
+        background.makeSolidColor(FlxG.width, FlxG.height, 0xFF000000);
+        background.alpha = 0.5;
+        background.scrollFactor.set(0, 0);
+        background.updateHitbox();
+
+        add(background);
+    }
+
+    public function exit():Void
+    {
+        FlxG.cameras.remove(camera);
+        PlayState.instance.closeSubState();
+        PlayState.instance.startCountdown();
+    }
+}

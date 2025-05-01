@@ -12,9 +12,37 @@ class RandomizerOperator extends Module
 {
 
     public var randomizerModuleName:String = "FNF Note Randomizer";
-    public var randomizerSaveModuleName:String = "FNF Note Randomizer Save";
+    public var trueNoteRandomizerModule:String = "FNF True Note Randomizer";
 
+    public var saveModuleName:String = "FNF Note Randomizer Save";
+    private var save;
+
+    public var setupSubStateName:String = "RandomizerSetupSubState";
+
+    public var ranSetup = false;
     public var ranRandomizer = false;
+
+    public var randomizerActive = false;
+
+    public var mainSettings = {
+
+        active: false,
+        debug: false,
+        runEveryCountdown: false,
+
+        runSetupSubState: false
+    };
+
+    public var noteGenerationSettings = {
+        generateNewNotes: false,
+        generateHoldNotes: false
+    };
+
+    public var trueRandomSettings = {
+        active: false,
+        allowStack: false,
+        randomizeDirections: false,
+    };
 
     public function new()
     {
@@ -28,25 +56,61 @@ class RandomizerOperator extends Module
 
     public function onCountdownStart(event):Void
     {
-        setUpRandomizer();
+        if ((ranSetup || !mainSettings.runSetupSubState) && (!ranRandomizer || mainSettings.runEveryCountdown))
+        {
+            runRandomizer();
+            return;
+        }
     }
 
     public function resetVariables():Void
     {
-        ranRandomizer = false;
-    }
+        save = ModuleHandler.getModule(saveModuleName).scriptGet("save");
 
-    public function setUpRandomizer():Void
-    {
-        PlayState.instance.currentSong.validScore = false;
-        var runOnCountdown = false;
-        if (!ranRandomizer || runOnCountdown) runRandomizer();
+        ranRandomizer = false;
+        
+        mainSettings.active = save["autoActive"];
+        mainSettings.debug = save["debug"];
+        mainSettings.runEveryCountdown = save["runEveryCountdown"];
+
+        mainSettings.runSetupSubState = save["runSetupSubState"];
+
+        trueRandomSettings.randomizeDirections = trueRandomSettings.active = save["trueRandom"]["randomizeDirections"];
+        trueRandomSettings.allowStack = save["trueRandom"]["allowStack"];
+
+        noteGenerationSettings.generateNewNotes = save["generateNewNotes"];
+        noteGenerationSettings.generateHoldNotes = save["generateHoldNotes"];
     }
 
     public function runRandomizer():Void
     {
-        var randomizerModule = ModuleHandler.getModule(randomizerModuleName);
+        PlayState.instance.currentSong.validScore = false;
+        __runRandomizer();
+    }
+
+    private function __runRandomizer():Void
+    {
+        var randomizerModule;
+
+        if (!trueRandomSettings.randomizeDirections)
+        {
+            randomizerModule = ModuleHandler.getModule(randomizerModuleName);
+        }
+        else
+        {
+            randomizerModule = ModuleHandler.getModule(trueNoteRandomizerModule);
+            randomizerModule.scriptSet("trueRandomSettings", trueRandomSettings);
+        }
+
+        setModuleSettings(randomizerModule);
+
         randomizerModule.scriptCall("randomize");
         ranRandomizer = true;
+    }
+
+    private function setModuleSettings(module:Module):Void
+    {
+        randomizerModule.scriptSet("mainSettings", mainSettings);
+        randomizerModule.scriptSet("noteGenerationSettings", noteGenerationSettings);
     }
 }

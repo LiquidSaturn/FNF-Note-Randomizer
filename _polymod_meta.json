@@ -16,6 +16,6 @@
     }
   ],
   "api_version": "0.6.3",
-  "mod_version": "2.0.1",
+  "mod_version": "3.0.0-dev",
   "license": "Apache-2.0"
 }

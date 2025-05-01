@@ -48,15 +48,13 @@ class RandomizerSave extends Module
 
         "autoActive" => true,
         "debug" => false,
+        "runEveryCountdown" => false,
 
-        "openSetUpSubState" => true,
+        "runSetupSubState" => true,
         "saveChartPrompt" => true,
 
         "generateNewNotes" => false,
         "generateHoldNotes" => false,
-
-        "trueRandomDirections" => false,
-        "trueRandomStackNotes" => false,
 
         "noteQueueRemovalTime" => 0.1,
         "doubleNoteQueueRemovalTime" => 0.14,
@@ -82,11 +80,13 @@ class RandomizerSave extends Module
         "diminishingWaveOdds" => 0.1,
         "diminishingCrossoverOdds" => 0.05
 
+        "trueRandom" => [
+            "randomizeDirections" => false,
+            "allowStack" => false
+        ],
+
         "presets" => [
             "Default" => [
-
-                "generateNewNotes" => false,
-                "generateHoldNotes" => false,
 
                 "noteQueueRemovalTime" => 0.1,
                 "doubleNoteQueueRemovalTime" => 0.14,
@@ -115,9 +115,6 @@ class RandomizerSave extends Module
             ],
             "Alt One" => [
 
-                "generateNewNotes" => false,
-                "generateHoldNotes" => false,
-
                 "noteQueueRemovalTime" => 0.12,
                 "doubleNoteQueueRemovalTime" => 0.16,
                 "tripleNoteQueueRemovalTime" => 0.1,
@@ -144,9 +141,6 @@ class RandomizerSave extends Module
                 
             ],
             "Legacy One" => [
-
-                "generateNewNotes" => false,
-                "generateHoldNotes" => false,
 
                 "noteQueueRemovalTime" => 0.12,
                 "doubleNoteQueueRemovalTime" => 0.12,
@@ -175,9 +169,6 @@ class RandomizerSave extends Module
             ],
             "Staircase Gamemode" => [
 
-                "generateNewNotes" => false,
-                "generateHoldNotes" => false,
-
                 "noteQueueRemovalTime" => 0,
                 "doubleNoteQueueRemovalTime" => 0,
                 "tripleNoteQueueRemovalTime" => 0,
@@ -205,9 +196,6 @@ class RandomizerSave extends Module
             ],
             "Jacks" => [
 
-                "generateNewNotes" => false,
-                "generateHoldNotes" => false,
-
                 "noteQueueRemovalTime" => 0,
                 "doubleNoteQueueRemovalTime" => 0,
                 "tripleNoteQueueRemovalTime" => 0,
@@ -232,9 +220,6 @@ class RandomizerSave extends Module
 
             ],
             "Blank Slate" => [
-
-                "generateNewNotes" => false,
-                "generateHoldNotes" => false,
                 
                 "noteQueueRemovalTime" => 0,
                 "doubleNoteQueueRemovalTime" => 0,

@@ -20,11 +20,10 @@ class Randomizer extends Module
 {
     private var flxRandom:FlxRandom = new FlxRandom();
 
-    public var trueNoteRandomizerModule:String = "FNF True Note Randomizer";
-    public var saveModuleName:String = "FNF Note Randomizer Save";
-
-    public var save;
     public var SongNoteData;
+
+    private var playerStrumline;
+    private var opponentStrumline;
 
     public function new()
     {
@@ -34,16 +33,8 @@ class Randomizer extends Module
 
     public function randomize():Void
     {
-        save = ModuleHandler.getModule(saveModuleName).scriptGet("save");
-
-        if (save["trueRandomDirections"])
-        {
-            randomizerModule = ModuleHandler.getModule(trueNoteRandomizerModule);
-            randomizerModule.scriptSet("save", save);
-
-            ModuleHandler.getModule(trueNoteRandomizerModule).scriptCall("randomize");
-            return;
-        }
+        playerStrumline = PlayState.instance.playerStrumline;
+        opponentStrumline = PlayState.instance.opponentStrumline;
 
         getSongNoteDataType();
         if (SongNoteData == null)
@@ -60,6 +51,9 @@ class Randomizer extends Module
 
     }
 
+    /**
+        Workaround for not being able to import SongNoteData
+     */
     public function getSongNoteDataType():Void
     {
         if (playerStrumline.noteData.length > 0) SongNoteData = Type.getClass(playerStrumline.noteData[0]);
@@ -78,14 +72,13 @@ class TrueRandomizer extends Module
     public var Type = Unserializer.DEFAULT_RESOLVER.resolveClass("Type");
     public var SongNoteData = null;
 
-    private var newNotesGenerated:Int = 0; // Stored as an int 
+    private var newNotesGenerated:Int = 0;
 
     private var currentHoldNotes:Array<Map<String, Dynamic>> = [];
 
-    public var generateHoldNotes:Bool;
-    public var generateNewNotes:Bool;
-
-    public var save;
+    // Set by RandomizerOperator
+    public var trueRandomData;
+    public var noteGenerationSettings;
 
     public function new()
     {
@@ -105,10 +98,7 @@ class TrueRandomizer extends Module
             return;
         }
 
-        generateHoldNotes = save["generateHoldNotes"];
-        generateNewNotes = save["generateNewNotes"];
-
-        if (save["trueRandomStackNotes"])
+        if (trueRandomData.allowStack)
         {
             randomizeWithStack();
             return;
@@ -168,7 +158,7 @@ class TrueRandomizer extends Module
         currentStrumTimeData.push(noteData.data);
         ignoreList.push(noteData.data);
 
-        if (generateHoldNotes && currentHoldNotes.length < strumline.strumlineNotes.length && flxRandom.int(1, 20) == 20) setToHoldNote(strumline, noteData, index);
+        if (noteGenerationSettings.generateHoldNotes && currentHoldNotes.length < strumline.strumlineNotes.length && flxRandom.int(1, 20) == 20) setToHoldNote(strumline, noteData, index);
 
         if (noteData.length > 0)
             currentHoldNotes.push(
@@ -178,7 +168,7 @@ class TrueRandomizer extends Module
                 ]
             );
 
-        if (!generateNewNotes || currentStrumTimeData.length + currentHoldNotes.length >= strumline.strumlineNotes.length) return;
+        if (!noteGenerationSettings.generateNewNotes || currentStrumTimeData.length + currentHoldNotes.length >= strumline.strumlineNotes.length) return;
 
         while (ignoreList.length < strumline.strumlineNotes.length && flxRandom.int(1, 10) == 10)
         {
@@ -190,7 +180,7 @@ class TrueRandomizer extends Module
 
             newNotesGenerated++;
 
-            if (generateHoldNotes && currentHoldNotes.length < strumline.strumlineNotes.length && flxRandom.int(1, 20) == 20) setToHoldNote(strumline, noteData, index);
+            if (noteGenerationSettings.generateHoldNotes && currentHoldNotes.length < strumline.strumlineNotes.length && flxRandom.int(1, 20) == 20) setToHoldNote(strumline, noteData, index);
         }
     }
 
@@ -207,13 +197,13 @@ class TrueRandomizer extends Module
             var noteData = playerStrumline.noteData[newIndex];
             noteData.data = flxRandom.int(0, playerStrumline.strumlineNotes.length - 1);
 
-            if (generateHoldNotes && flxRandom.int(1, 20) == 20) noteData.length = flxRandom.int(200, 900);
+            if (noteGenerationSettings.generateHoldNotes && flxRandom.int(1, 20) == 20) noteData.length = flxRandom.int(200, 900);
 
             var notesGeneratedWithThisStrumTime = 0;
-            while (generateNewNotes && notesGeneratedWithThisStrumTime < playerStrumline.strumlineNotes.length - 1 && flxRandom.int(1, 10) == 10)
+            while (noteGenerationSettings.generateNewNotes && notesGeneratedWithThisStrumTime < playerStrumline.strumlineNotes.length - 1 && flxRandom.int(1, 10) == 10)
             {
                 var newNoteData = new SongNoteData(noteData.time, flxRandom.int(0, playerStrumline.strumlineNotes.length - 1));
-                if (generateHoldNotes && flxRandom.int(1, 20) == 20) newNoteData.length = flxRandom.int(200, 900);
+                if (noteGenerationSettings.generateHoldNotes && flxRandom.int(1, 20) == 20) newNoteData.length = flxRandom.int(200, 900);
                 playerStrumline.noteData.insert(newIndex, newNoteData);
                 newNotesGenerated++;
             }
@@ -230,13 +220,13 @@ class TrueRandomizer extends Module
             var noteData = opponentStrumline.noteData[newIndex];
             noteData.data = flxRandom.int(playerStrumline.strumlineNotes.length, strumlineNotesEndData);
 
-            if (generateHoldNotes && flxRandom.int(1, 20) == 20) noteData.length = flxRandom.int(200, 900);
+            if (noteGenerationSettings.generateHoldNotes && flxRandom.int(1, 20) == 20) noteData.length = flxRandom.int(200, 900);
 
             var notesGeneratedWithThisStrumTime = 0;
-            while (generateNewNotes && notesGeneratedWithThisStrumTime < opponentStrumline.strumlineNotes.length - 1 && flxRandom.int(1, 10) == 10)
+            while (noteGenerationSettings.generateNewNotes && notesGeneratedWithThisStrumTime < opponentStrumline.strumlineNotes.length - 1 && flxRandom.int(1, 10) == 10)
             {
                 var newNoteData = new SongNoteData(noteData.time, flxRandom.int(playerStrumline.strumlineNotes.length, strumlineNotesEndData));
-                if (generateHoldNotes && flxRandom.int(1, 20) == 20) newNoteData.length = flxRandom.int(200, 900);
+                if (noteGenerationSettings.generateHoldNotes && flxRandom.int(1, 20) == 20) newNoteData.length = flxRandom.int(200, 900);
                 opponentStrumline.noteData.insert(newIndex, newNoteData);
                 newNotesGenerated++;
             }
@@ -309,6 +299,9 @@ class TrueRandomizer extends Module
         }
     }
 
+    /**
+        Workaround for not being able to import SongNoteData
+     */
     public function getSongNoteDataType():Void
     {
         if (playerStrumline.noteData.length > 0) SongNoteData = Type.getClass(playerStrumline.noteData[0]);

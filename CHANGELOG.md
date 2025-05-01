@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The whole codebase was redone from the ground up
+- Changed the way some of the save variables work, old saves will be perfectly compatible but some settings changed their location in the save so specific settings may need some reconfiguration but it's not a big deal
 
 ### Removed
 
