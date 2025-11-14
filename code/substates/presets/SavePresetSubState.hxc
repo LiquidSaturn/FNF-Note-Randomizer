@@ -9,7 +9,8 @@ import funkin.modding.module.ModuleHandler;
 
 import funkin.Paths;
 
-import haxe.Unserializer;
+import funkin.ui.AtlasText;
+import funkin.ui.TextMenuList;
 
 class SavePresetSubState extends ScriptedMusicBeatSubState
 {
@@ -26,9 +27,6 @@ class SavePresetSubState extends ScriptedMusicBeatSubState
     var saveText;
 
     var presetNameBG;
-
-    var TextMenuList = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.TextMenuList");
-    var AtlasText = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.AtlasText");
 
     var saveModule;
     var save;

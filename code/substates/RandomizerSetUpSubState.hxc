@@ -12,8 +12,12 @@ import funkin.Paths;
 
 import funkin.play.PlayState;
 
+import funkin.ui.AtlasText;
+import funkin.ui.TextMenuList;
+
+import funkin.util.FileUtil;
+
 import haxe.Json;
-import haxe.Unserializer;
 
 import StringTools;
 
@@ -28,12 +32,6 @@ class RandomizerSetUpSubState extends ScriptedMusicBeatSubState
     var options;
     var questionText;
 
-    var TextMenuList = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.TextMenuList");
-    var AtlasText = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.AtlasText");
-
-    var FileSystem = Unserializer.DEFAULT_RESOLVER.resolveClass("sys.FileSystem");
-    var File = Unserializer.DEFAULT_RESOLVER.resolveClass("sys.io.File");
-
     var savedCharts;
     var chartFolder;
 
@@ -44,10 +42,14 @@ class RandomizerSetUpSubState extends ScriptedMusicBeatSubState
         savedCharts = [];
 
         randomizer = ModuleHandler.getModule("FNF Note Randomizer");
+        var mobile = randomizer.scriptGet("mobile");
 
-        chartFolder = randomizer.scriptGet("modFolderPath") + "/chartsaves/" + PlayState.instance.currentSong.id + "-" + PlayState.instance.currentVariation + "-" + PlayState.instance.currentDifficulty;
-
-        if (FileSystem.exists(chartFolder)) savedCharts = [for (file in FileSystem.readDirectory(chartFolder)) if (StringTools.endsWith(file, ".json") && !FileSystem.isDirectory(chartFolder + "/" + file)) StringTools.replace(file, ".json", "")];
+        if (!mobile)
+        {
+            chartFolder = randomizer.scriptGet("modFolderPath") + "/chartsaves/" + PlayState.instance.currentSong.id + "-" + PlayState.instance.currentVariation + "-" + PlayState.instance.currentDifficulty;
+            if (FileUtil.directoryExists(chartFolder)) savedCharts = [for (file in FileUtil.readDir(chartFolder)) if (StringTools.endsWith(file, ".json") && FileUtil.fileExists(chartFolder + "/" + file)) StringTools.replace(file, ".json", "")];
+        }
+        else savedCharts = [];
 
         currentSettings = randomizer.scriptGet("currentSettings");
         currentSettings["trueRandomDirections"] = false;
@@ -149,9 +151,6 @@ class LoadSavedChartSubState extends ScriptedMusicBeatSubState
     var state;
     var savedCharts;
 
-    var TextMenuList = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.TextMenuList");
-    var AtlasText = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.AtlasText");
-
     var File;
 
     var selectedItemIndex = 0;
@@ -166,8 +165,6 @@ class LoadSavedChartSubState extends ScriptedMusicBeatSubState
     {
         super();
         state = params[0];
-
-        File = state.File;
         
         randomizer = state.randomizer;
 
@@ -241,7 +238,7 @@ class LoadSavedChartSubState extends ScriptedMusicBeatSubState
     public function loadChart(chart:String):Void
     {
 
-        var chartData = Json.parse(File.getContent(chartFolder + "/" + chart + ".json"));
+        var chartData = Json.parse(FileUtil.readStringFromPath(chartFolder + "/" + chart + ".json"));
 
         for (index in 0...PlayState.instance.playerStrumline.noteData.length) PlayState.instance.playerStrumline.noteData[index].data = chartData.playerNoteData[index];
         for (index in 0...PlayState.instance.opponentStrumline.noteData.length) PlayState.instance.opponentStrumline.noteData[index].data = chartData.opponentNoteData[index];
@@ -269,9 +266,6 @@ class SetUpLoadPresetSubState extends ScriptedMusicBeatSubState
     var currentSettings;
 
     var presets;
-
-    var TextMenuList = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.TextMenuList");
-    var AtlasText = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.AtlasText");
 
     var selectedItemIndex = 0;
 

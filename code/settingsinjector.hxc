@@ -16,15 +16,14 @@ import funkin.ui.options.items.NumberPreferenceItem;
 import funkin.ui.options.OptionsState;
 import funkin.ui.options.PreferencesMenu;
 
-import haxe.Unserializer;
+import funkin.ui.AtlasText;
+import funkin.ui.TextMenuList;
 
 import Std;
 import Math;
 
 class RandomizerSettingsInjector extends Module
 {
-
-    public var state;
 
     public var inOptions = false;
     public var optionsPage;
@@ -43,12 +42,10 @@ class RandomizerSettingsInjector extends Module
 
     override public function onStateChangeEnd(event):Void
     {
-        state = event.targetState;
-        inOptions = Std.isOfType(state, OptionsState);
-
+        inOptions = event.targetState != null && event.targetState == OptionsState.instance;
         if (!inOptions) return;
 
-        optionsPage = state.optionsCodex.pages.get("options");
+        optionsPage = OptionsState.instance.optionsCodex.pages.get("options");
 
         var exitTag = "EXIT";
 
@@ -56,7 +53,7 @@ class RandomizerSettingsInjector extends Module
         optionsPage.items.byName.remove(exitTag);
         optionsPage.items.remove(exitOption);
         
-        createOptionPage(exitOption);
+        createOptionPage();
 
         exitOption.y += 100;
         optionsPage.items.addItem(exitTag, exitOption);
@@ -64,19 +61,19 @@ class RandomizerSettingsInjector extends Module
         for (option in optionsPage.items.members) option.y -= 80;
     }   
 
-    public function createOptionPage(exitOption):Void
+    public function createOptionPage():Void
     {
-        randomizerOptionPage = state.optionsCodex.addPage("NoteRandomizer", new PreferencesMenu());
+        randomizerOptionPage = OptionsState.instance.optionsCodex.addPage("NoteRandomizer", new PreferencesMenu());
 
         randomizerOptionPage.onExit.add(
             function() {
-                state.optionsCodex.switchPage("options");
+                OptionsState.instance.optionsCodex.switchPage("options");
             }
         );
 
         createSettings();
 
-        optionsPage.createItem("NOTE RANDOMIZER", function() state.optionsCodex.switchPage("NoteRandomizer"));
+        optionsPage.createItem("NOTE RANDOMIZER", function() OptionsState.instance.optionsCodex.switchPage("NoteRandomizer"));
         
         var randomizerOption = optionsPage.items.byName.get("NOTE RANDOMIZER");
         randomizerOption.y -= 100;
@@ -118,8 +115,8 @@ class RandomizerSettingsInjector extends Module
 
         addCategory("Presets");
 
-        addCallbackOption("Save Preset", () -> {state.openSubState(ScriptedMusicBeatSubState.init("SavePresetSubState"));});
-        addCallbackOption("Load Preset", () -> {state.openSubState(ScriptedMusicBeatSubState.init("LoadPresetSubState"));});
+        addCallbackOption("Save Preset", () -> {FlxG.state.openSubState(ScriptedMusicBeatSubState.init("SavePresetSubState"));});
+        addCallbackOption("Load Preset", () -> {FlxG.state.openSubState(ScriptedMusicBeatSubState.init("LoadPresetSubState"));});
 
         addCategory("Note Queue");
 
@@ -157,7 +154,7 @@ class RandomizerSettingsInjector extends Module
 
         addCategory("CAREFUL!!!");
 
-        addCallbackOption("Reset Save", () -> {state.openSubState(ScriptedMusicBeatSubState.init("ResetSaveSubState"));});
+        addCallbackOption("Reset Save", () -> {FlxG.state.openSubState(ScriptedMusicBeatSubState.init("ResetSaveSubState"));});
 
         randomizerOptionPage.itemDesc.text = randomizerOptionPage.preferenceDesc[0];
     }
@@ -228,9 +225,6 @@ class ResetSaveSubState extends ScriptedMusicBeatSubState
 {
 
     var camera;
-
-    var TextMenuList = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.TextMenuList");
-    var AtlasText = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.AtlasText");
 
     var textList;
     var questionText;

@@ -28,7 +28,7 @@ class RandomizerSave extends Module
         "maxJackLength" => 3,
         "maxTrillLength" => 4,
         "maxWaveLength" => 5,
-        "maxCrossoverLength" => 6
+        "maxCrossoverLength" => 6,
 
         "jackOdds" => 0.25,
         "trillOdds" => 0.6,
@@ -38,7 +38,7 @@ class RandomizerSave extends Module
         "diminishingJackOdds" => 0,
         "diminishingTrillOdds" => 0.1,
         "diminishingWaveOdds" => 0.1,
-        "diminishingCrossoverOdds" => 0.05
+        "diminishingCrossoverOdds" => 0.05,
 
         "presets" => [
             "Default" => [
@@ -55,7 +55,7 @@ class RandomizerSave extends Module
                 "maxJackLength" => 3,
                 "maxTrillLength" => 4,
                 "maxWaveLength" => 5,
-                "maxCrossoverLength" => 6
+                "maxCrossoverLength" => 6,
 
                 "jackOdds" => 0.25,
                 "trillOdds" => 0.6,
@@ -82,7 +82,7 @@ class RandomizerSave extends Module
                 "maxJackLength" => 3,
                 "maxTrillLength" => 4,
                 "maxWaveLength" => 7,
-                "maxCrossoverLength" => 8
+                "maxCrossoverLength" => 8,
 
                 "jackOdds" => 0.2,
                 "trillOdds" => 1,
@@ -135,12 +135,12 @@ class RandomizerSave extends Module
                 "maxJackLength" => 1,
                 "maxTrillLength" => 2,
                 "maxWaveLength" => 3,
-                "maxCrossoverLength" => 0
+                "maxCrossoverLength" => 0,
 
                 "jackOdds" => 1,
                 "trillOdds" => 1,
                 "waveOdds" => 1,
-                "crossoverOdds" => 1
+                "crossoverOdds" => 1,
 
                 "diminishingJackOdds" => 0,
                 "diminishingTrillOdds" => 0,
@@ -160,7 +160,7 @@ class RandomizerSave extends Module
                 "maxJackLength" => 0,
                 "maxTrillLength" => 2,
                 "maxWaveLength" => 3,
-                "maxCrossoverLength" => 4
+                "maxCrossoverLength" => 4,
 
                 "jackOdds" => 1,
                 "trillOdds" => 1,
@@ -185,7 +185,7 @@ class RandomizerSave extends Module
                 "maxJackLength" => 0,
                 "maxTrillLength" => 0,
                 "maxWaveLength" => 0,
-                "maxCrossoverLength" => 0
+                "maxCrossoverLength" => 0,
 
                 "jackOdds" => 1,
                 "trillOdds" => 1,

@@ -13,9 +13,13 @@ import funkin.Paths;
 import funkin.play.PlayStatePlaylist;
 import funkin.play.PlayState;
 
-import haxe.Json;
-import haxe.Unserializer;
+import funkin.util.FileUtil;
 
+import haxe.Json;
+
+import openfl.Lib;
+
+import Reflect;
 import Std;
 
 class Randomizer extends Module
@@ -42,16 +46,17 @@ class Randomizer extends Module
     public var currentPreset = null;
 
     public var modFolderPath;
-
-    var FileSystem = Unserializer.DEFAULT_RESOLVER.resolveClass("sys.FileSystem");
-    var File = Unserializer.DEFAULT_RESOLVER.resolveClass("sys.io.File");
+    public var mobile; // DOES NOT WORK!!! This is setup for if I can find a way to detect whether or not the game is being ran on mobile so there doesn't need to be a separate port for mobile
 
     public var usingPreset = false;
 
     override public function new()
     {
+
         super("FNF Note Randomizer", 0);
-        modFolderPath = getModFolderPath();
+        mobile = false;
+
+        if (!mobile) modFolderPath = getModFolderPath();
     }
 
     override public function onStateChangeEnd(event):Void
@@ -642,7 +647,7 @@ class Randomizer extends Module
     override function onSongEnd(event)
     {
 
-        if (randomizerActive && !ranSaveChartPrompt && currentSettings["saveChartPrompt"])
+        if (randomizerActive && !mobile && !ranSaveChartPrompt && currentSettings["saveChartPrompt"])
         {
             PlayState.instance.openSubState(ScriptedMusicBeatSubState.init("SaveChartSubState"));
             event.cancel();
@@ -664,14 +669,15 @@ class Randomizer extends Module
 
     public function getModFolderPath():String
     {
-        for (folder in FileSystem.readDirectory("mods/"))
+        var modsFolder = "mods";
+        for (folder in FileUtil.readDir(modsFolder))
         {
-            var fullPath = "mods/" + folder;
+            var fullPath = modsFolder + "/" + folder;
             
-            if (!FileSystem.isDirectory(fullPath)) continue;
-            if (!FileSystem.exists(fullPath + "/_polymod_meta.json")) continue;
+            if (!FileUtil.directoryExists(fullPath)) continue;
+            if (!FileUtil.fileExists(fullPath + "/_polymod_meta.json")) continue;
 
-            var metadata = Json.parse(File.getContent(fullPath + "/_polymod_meta.json"));
+            var metadata = Json.parse(FileUtil.readStringFromPath(fullPath + "/_polymod_meta.json"));
 
             if (metadata.title != "FNF Note Randomizer") continue;
 

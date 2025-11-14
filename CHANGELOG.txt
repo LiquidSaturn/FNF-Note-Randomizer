@@ -1,8 +1,14 @@
+V2.0.2
+
+FIXES
+
+- Fixed the Note Randomizer to make it work with modern versions of FNF
+
 V2.0.1
 
 ADJUSTMENTS
 
-Set the API version in _polymod_meta.json to 0.6.3 so FNF 0.6.3 will load it
+- Set the API version in _polymod_meta.json to 0.6.3 so FNF 0.6.3 will load it
 
 V2.0.0
 

@@ -13,16 +13,17 @@ import funkin.Paths;
 
 import funkin.play.PlayState;
 
+import funkin.ui.AtlasText;
+import funkin.ui.TextMenuList;
+
+import funkin.util.FileUtil;
+
 import haxe.Json;
-import haxe.Unserializer;
 
 class SaveChartSubState extends ScriptedMusicBeatSubState
 {
 
     var namingChartSave = false;
-
-    var TextMenuList = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.TextMenuList");
-    var AtlasText = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.AtlasText");
 
     var camera;
     var textList;
@@ -114,12 +115,6 @@ class NameChartSubState extends ScriptedMusicBeatSubState
 
     var saveName;
 
-    var TextMenuList = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.TextMenuList");
-    var AtlasText = Unserializer.DEFAULT_RESOLVER.resolveClass("funkin.ui.AtlasText");
-
-    var FileSystem = Unserializer.DEFAULT_RESOLVER.resolveClass("sys.FileSystem");
-    var File = Unserializer.DEFAULT_RESOLVER.resolveClass("sys.io.File");
-
     var textList;
 
     var saveNameBG;
@@ -197,7 +192,7 @@ class NameChartSubState extends ScriptedMusicBeatSubState
 
         var chartFolder = modFolderPath + "/chartsaves/" + PlayState.instance.currentSong.id + "-" + PlayState.instance.currentVariation + "-" + PlayState.instance.currentDifficulty;
 
-        if (!FileSystem.exists(chartFolder)) FileSystem.createDirectory(chartFolder);
+        FileUtil.createDirIfNotExists(chartFolder);
 
         var playerNoteData = randomizer.scriptGet("playerNoteData");
         var opponentNoteData = randomizer.scriptGet("opponentNoteData");
@@ -213,7 +208,7 @@ class NameChartSubState extends ScriptedMusicBeatSubState
             "opponentNoteData" => opponentData
         ];
 
-        File.saveContent(chartFolder + "/" + saveName + ".json", Json.stringify(saveMap));
+        FileUtil.writeStringToPath(chartFolder + "/" + saveName + ".json", Json.stringify(saveMap));
 
         state.exit();
         return;
