@@ -33,6 +33,8 @@ class RandomizerSettingsInjector extends Module
     public var save;
     public var saveModule;
 
+    public var mobile;
+
     public var categories = [];
 
     override public function new()
@@ -46,22 +48,40 @@ class RandomizerSettingsInjector extends Module
         if (!inOptions) return;
 
         optionsPage = OptionsState.instance.optionsCodex.pages.get("options");
+        mobile = ModuleHandler.getModule("FNF Note Randomizer").scriptGet("mobile");
 
+        var clearSaveDataTag = "CLEAR SAVE DATA";
         var exitTag = "EXIT";
 
+        var clearSaveDataOption = optionsPage.items.byName.get(clearSaveDataTag);
+        optionsPage.items.byName.remove(clearSaveDataTag);
+        optionsPage.items.remove(clearSaveDataOption);
+
         var exitOption = optionsPage.items.byName.get(exitTag);
-        optionsPage.items.byName.remove(exitTag);
-        optionsPage.items.remove(exitOption);
+
+        if (mobile == null) mobile = event.targetState.hitbox != null;
         
-        createOptionPage();
+        if (exitOption != null)
+        {
+            optionsPage.items.byName.remove(exitTag);
+            optionsPage.items.remove(exitOption);
+        }
+        
+        createOptionPage(clearSaveDataOption);
 
-        exitOption.y += 100;
-        optionsPage.items.addItem(exitTag, exitOption);
+        clearSaveDataOption.y += 100;
+        optionsPage.items.addItem(clearSaveDataTag, clearSaveDataOption);
 
-        for (option in optionsPage.items.members) option.y -= 80;
+        if (exitOption != null)
+        {
+            exitOption.y += 100;
+            optionsPage.items.addItem(exitTag, exitOption);
+        }
+
+        for (option in optionsPage.items.members) option.y -= mobile ? 40 : 80;
     }   
 
-    public function createOptionPage():Void
+    public function createOptionPage(clearSaveDataOption):Void
     {
         randomizerOptionPage = OptionsState.instance.optionsCodex.addPage("NoteRandomizer", new PreferencesMenu());
 
@@ -76,7 +96,7 @@ class RandomizerSettingsInjector extends Module
         optionsPage.createItem("NOTE RANDOMIZER", function() OptionsState.instance.optionsCodex.switchPage("NoteRandomizer"));
         
         var randomizerOption = optionsPage.items.byName.get("NOTE RANDOMIZER");
-        randomizerOption.y -= 100;
+        randomizerOption.y = clearSaveDataOption.y;
     }
 
     public function onUpdate(elapsed:Float):Void
@@ -101,22 +121,25 @@ class RandomizerSettingsInjector extends Module
         }
 
         randomizerOptionPage.createPrefItemCheckbox("Auto Activate", "Automatically activates the note randomizer with the current settings", (value:Bool) -> {setSaveKey("autoActive", value);}, save["autoActive"]);
-        randomizerOptionPage.createPrefItemCheckbox("Debug", "Traces a bunch of the inner \"thoughts\" of the randomizer while it's generating a chart, good to use when testing or making randomizer presets", (value:Bool) -> {setSaveKey("debug", value);}, save["debug"]);
+        if (!mobile) randomizerOptionPage.createPrefItemCheckbox("Debug", "Traces a bunch of the inner \"thoughts\" of the randomizer while it's generating a chart, good to use when testing or making randomizer presets", (value:Bool) -> {setSaveKey("debug", value);}, save["debug"]);
 
-        addCategory("Prompts");
+        if (!mobile) addCategory("Prompts");
 
         randomizerOptionPage.createPrefItemCheckbox("Setup SubState", "Opens a substate whenever entering PlayState that lets you select whether or not you wanna use the randomizer and if you want to use a specific preset (overwrites Auto Activate if set to true)", (value:Bool) -> {setSaveKey("openSetUpSubState", value);}, save["openSetUpSubState"]);
-        randomizerOptionPage.createPrefItemCheckbox("Save Chart Prompt", "Whether the randomizer will ask you if you want to save a chart when a song finishes", (value:Bool) -> {setSaveKey("saveChartPrompt", value);}, save["saveChartPrompt"]);
+        if (!mobile) randomizerOptionPage.createPrefItemCheckbox("Save Chart Prompt", "Whether the randomizer will ask you if you want to save a chart when a song finishes", (value:Bool) -> {setSaveKey("saveChartPrompt", value);}, save["saveChartPrompt"]);
 
         addCategory("True Random");
 
         randomizerOptionPage.createPrefItemCheckbox("True Random Directions", "The randomizer has systems in place to stop the charts from becoming complete spam, this removes all of that", (value:Bool) -> {setSaveKey("trueRandomDirections", value);}, save["trueRandomDirections"]);
         randomizerOptionPage.createPrefItemCheckbox("Note Stacking", "Whether or not the randomizer is allowed to stack notes directly on top of one another", (value:Bool) -> {setSaveKey("trueRandomStackNotes", value);}, save["trueRandomStackNotes"]);
 
-        addCategory("Presets");
+        if (!mobile)
+        {
+            addCategory("Presets");
 
-        addCallbackOption("Save Preset", () -> {FlxG.state.openSubState(ScriptedMusicBeatSubState.init("SavePresetSubState"));});
-        addCallbackOption("Load Preset", () -> {FlxG.state.openSubState(ScriptedMusicBeatSubState.init("LoadPresetSubState"));});
+            addCallbackOption("Save Preset", () -> {FlxG.state.openSubState(ScriptedMusicBeatSubState.init("SavePresetSubState"));});
+            addCallbackOption("Load Preset", () -> {FlxG.state.openSubState(ScriptedMusicBeatSubState.init("LoadPresetSubState"));});
+        }
 
         addCategory("Note Queue");
 
@@ -159,10 +182,10 @@ class RandomizerSettingsInjector extends Module
         randomizerOptionPage.itemDesc.text = randomizerOptionPage.preferenceDesc[0];
     }
 
-    public function addCategory(name:String):Void
+    public function addCategory(name:String, ?description:String):Void
     {
         var item = randomizerOptionPage.items.createItem(0, 120 * randomizerOptionPage.items.length + 35, name, "bold", () -> {}, true);
-        randomizerOptionPage.preferenceDesc.push("");
+        randomizerOptionPage.preferenceDesc.push(description == null ? "" : description);
         categories.push(item);
     }
 

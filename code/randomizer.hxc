@@ -13,6 +13,7 @@ import funkin.Paths;
 import funkin.play.PlayStatePlaylist;
 import funkin.play.PlayState;
 
+import funkin.ui.mainmenu.MainMenuState;
 import funkin.util.FileUtil;
 
 import haxe.Json;
@@ -25,7 +26,7 @@ import Std;
 class Randomizer extends Module
 {
 
-    public var version = "2.0.0";
+    public var version = "2.0.2";
     public var randomizerActive = false;
 
     var saveModule;
@@ -46,17 +47,15 @@ class Randomizer extends Module
     public var currentPreset = null;
 
     public var modFolderPath;
-    public var mobile; // DOES NOT WORK!!! This is setup for if I can find a way to detect whether or not the game is being ran on mobile so there doesn't need to be a separate port for mobile
+    public var mobile = null;
 
     public var usingPreset = false;
 
+    private var curDiff;
+
     override public function new()
     {
-
         super("FNF Note Randomizer", 0);
-        mobile = false;
-
-        if (!mobile) modFolderPath = getModFolderPath();
     }
 
     override public function onStateChangeEnd(event):Void
@@ -72,10 +71,21 @@ class Randomizer extends Module
         usingPreset = false;
         
         if (save != null) currentSettings = save.copy();
+
+        if (!Std.isOfType(event.targetState, MainMenuState)) return;
+
+        if (mobile == null)
+        {
+            mobile = event.targetState.backButton != null;
+            if (!mobile) modFolderPath = getModFolderPath();
+        }
     }
 
     public function onCountdownStart(event):Void
     {
+
+        randomizerSetUp = randomizerSetUp && curDiff == PlayState.instance.currentDifficulty;
+        curDiff = PlayState.instance.currentDifficulty;
 
         if (randomizerSetUp || event.eventCanceled || PlayState.instance.isInCutscene)
         {

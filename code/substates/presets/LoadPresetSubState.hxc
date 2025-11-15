@@ -39,7 +39,7 @@ class LoadPresetSubState extends ScriptedMusicBeatSubState
         save = saveModule.scriptGet("save");
 
         camera = new FunkinCamera("Load Randomizer Preset Camera", 0, 0, FlxG.width, FlxG.height);
-        FlxG.cameras.add(camera, true);
+        FlxG.cameras.add(camera, false);
         this.cameras = [camera];
 
         selectPresetText = new AtlasText(0, 100, "Presets", "bold");
@@ -71,8 +71,7 @@ class LoadPresetSubState extends ScriptedMusicBeatSubState
             return;
         }
 
-        camera.target = presetTextList.selectedItem;
-        if (camera.targetOffset != null) camera.targetOffset.x = -presetTextList.selectedItem.width / 2 + FlxG.width / 2 - 50;
+        camera.scroll.y = presetTextList.selectedItem.y - 300;
 
         super.update(elapsed);
 
