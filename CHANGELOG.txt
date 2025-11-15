@@ -4,6 +4,10 @@ FIXES
 
 - Fixed the Note Randomizer to make it work with modern versions of FNF
 
+- Added mobile support
+
+- Made the randomizer re-randomize upon changing difficulty
+
 V2.0.1
 
 ADJUSTMENTS
