@@ -8,6 +8,7 @@ class RandomizerSave extends Module
     public var defaultSave = [
 
         "autoActive" => true,
+        "activeText" => true,
         "debug" => false,
 
         "openSetUpSubState" => true,

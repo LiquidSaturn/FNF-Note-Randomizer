@@ -120,6 +120,7 @@ class RandomizerSettingsInjector extends Module
             save = saveModule.scriptGet("save");
         }
 
+        randomizerOptionPage.createPrefItemCheckbox("Active Text", "Displays text on the side letting you know whether or not the randomizer is active while playing", (value:Bool) -> {setSaveKey("activeText", value);}, save["activeText"]);
         randomizerOptionPage.createPrefItemCheckbox("Auto Activate", "Automatically activates the note randomizer with the current settings", (value:Bool) -> {setSaveKey("autoActive", value);}, save["autoActive"]);
         if (!mobile) randomizerOptionPage.createPrefItemCheckbox("Debug", "Traces a bunch of the inner \"thoughts\" of the randomizer while it's generating a chart, good to use when testing or making randomizer presets", (value:Bool) -> {setSaveKey("debug", value);}, save["debug"]);
 

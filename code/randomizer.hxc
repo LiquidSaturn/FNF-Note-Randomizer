@@ -115,27 +115,30 @@ class Randomizer extends Module
 
     public function setUp():Void
     {
-        var activeText = new FlxText(1085, 360, -1, "Note Randomizer Status: ON", 16);
-
-        if (!randomizerActive)
+        if (save["activeText"])
         {
-            activeText.text = "Note Randomizer Status: OFF";
-            activeText.x = 1125;
+            var activeText = new FlxText(1085, 360, -1, "Note Randomizer Status: ON", 16);
+
+            if (!randomizerActive)
+            {
+                activeText.text = "Note Randomizer Status: OFF";
+                activeText.x = 1125;
+            }
+
+            if (readingFromChart)
+            {
+                activeText.text = "Note Randomizer Status: READING FROM SAVED CHART";
+                activeText.x = 1025;
+            }
+
+            activeText.setFormat(Paths.font("vcr.ttf"), 16, 0xFFFFFFFF, 0, FlxTextBorderStyle.OUTLINE, 0xFF000000);
+            activeText.borderSize = 1;
+            activeText.size = 16;
+            activeText.angle = -90;
+
+            activeText.cameras = [PlayState.instance.camHUD];
+            PlayState.instance.add(activeText);
         }
-
-        if (readingFromChart)
-        {
-            activeText.text = "Note Randomizer Status: READING FROM SAVED CHART";
-            activeText.x = 1025;
-        }
-
-        activeText.setFormat(Paths.font("vcr.ttf"), 16, 0xFFFFFFFF, 0, FlxTextBorderStyle.OUTLINE, 0xFF000000);
-        activeText.borderSize = 1;
-        activeText.size = 16;
-        activeText.angle = -90;
-
-        activeText.cameras = [PlayState.instance.camHUD];
-        PlayState.instance.add(activeText);
 
         randomizerSetUp = true;
 
@@ -143,25 +146,28 @@ class Randomizer extends Module
 
         var modeText = new FlxText(1125, 360, -1, "Mode: CURRENT SETTINGS", 16);
 
-        if (currentSettings["trueRandomDirections"])
+        if (save["activeText"])
         {
-            modeText.text = "Mode: TRUE RANDOM";
-            modeText.x = 1145;
+            if (currentSettings["trueRandomDirections"])
+            {
+                modeText.text = "Mode: TRUE RANDOM";
+                modeText.x = 1145;
+            }
+
+            if (usingPreset)
+            {
+                modeText.text = "Mode: USING PRESET";
+                modeText.x = 1145;
+            }
+
+            modeText.setFormat(Paths.font("vcr.ttf"), 16, 0xFFFFFFFF, 0, FlxTextBorderStyle.OUTLINE, 0xFF000000);
+            modeText.borderSize = 1;
+            modeText.size = 16;
+            modeText.angle = -90;
+
+            modeText.cameras = [PlayState.instance.camHUD];
+            PlayState.instance.add(modeText);
         }
-
-        if (usingPreset)
-        {
-            modeText.text = "Mode: USING PRESET";
-            modeText.x = 1145;
-        }
-
-        modeText.setFormat(Paths.font("vcr.ttf"), 16, 0xFFFFFFFF, 0, FlxTextBorderStyle.OUTLINE, 0xFF000000);
-        modeText.borderSize = 1;
-        modeText.size = 16;
-        modeText.angle = -90;
-
-        modeText.cameras = [PlayState.instance.camHUD];
-        PlayState.instance.add(modeText);
 
         maxNoteQueueLength = getMaxNoteQueueLength();
 

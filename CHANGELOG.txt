@@ -1,3 +1,9 @@
+V2.0.3
+
+ADDITIONS
+
+- Added an option to allow you to toggle off the active text in-game
+
 V2.0.2
 
 FIXES
