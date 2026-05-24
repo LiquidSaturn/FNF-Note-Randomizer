@@ -17,7 +17,7 @@ class SavePresetSubState extends ScriptedMusicBeatSubState
 
     var Typer;
 
-    var camera;
+    var presetCamera;
 
     var textList;
     var presetName = "";
@@ -40,9 +40,9 @@ class SavePresetSubState extends ScriptedMusicBeatSubState
 
         save = saveModule.scriptGet("save");
 
-        camera = new FunkinCamera("Save Randomizer Preset Camera", 0, 0, FlxG.width, FlxG.height);
-        FlxG.cameras.add(camera, true);
-        this.cameras = [camera];
+        presetCamera = new FunkinCamera("Save Randomizer Preset Camera", 0, 0, FlxG.width, FlxG.height);
+        FlxG.cameras.add(presetCamera, true);
+        this.cameras = [presetCamera];
 
         presetName = "";
 
@@ -143,7 +143,7 @@ class SavePresetSubState extends ScriptedMusicBeatSubState
 
     public function closeSelf()
     {
-        FlxG.cameras.remove(camera);
+        FlxG.cameras.remove(presetCamera);
 
         FlxG.state.closeSubState();
 

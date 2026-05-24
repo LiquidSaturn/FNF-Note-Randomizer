@@ -20,7 +20,7 @@ class LoadPresetSubState extends ScriptedMusicBeatSubState
 
     var settingsModule;
 
-    var camera;
+    var presetCamera;
 
     var selectPresetText;
 
@@ -38,9 +38,9 @@ class LoadPresetSubState extends ScriptedMusicBeatSubState
 
         save = saveModule.scriptGet("save");
 
-        camera = new FunkinCamera("Load Randomizer Preset Camera", 0, 0, FlxG.width, FlxG.height);
-        FlxG.cameras.add(camera, false);
-        this.cameras = [camera];
+        presetCamera = new FunkinCamera("Load Randomizer Preset Camera", 0, 0, FlxG.width, FlxG.height);
+        FlxG.cameras.add(presetCamera, true);
+        this.cameras = [presetCamera];
 
         selectPresetText = new AtlasText(0, 100, "Presets", "bold");
         selectPresetText.x = (FlxG.width - selectPresetText.width) / 2;
@@ -71,7 +71,7 @@ class LoadPresetSubState extends ScriptedMusicBeatSubState
             return;
         }
 
-        camera.scroll.y = presetTextList.selectedItem.y - 300;
+        presetCamera.scroll.y = presetTextList.selectedItem.y - 300;
 
         super.update(elapsed);
 
@@ -95,7 +95,7 @@ class LoadPresetSubState extends ScriptedMusicBeatSubState
 
     public function closeSelf()
     {
-        FlxG.cameras.remove(camera);
+        FlxG.cameras.remove(presetCamera);
 
         FlxG.state.closeSubState();
         FlxG.state.persistentUpdate = true;

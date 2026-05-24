@@ -27,7 +27,7 @@ class RandomizerSetUpSubState extends ScriptedMusicBeatSubState
     var randomizer;
     var currentSettings;
 
-    var camera;
+    var setupCamera;
 
     var options;
     var questionText;
@@ -54,10 +54,10 @@ class RandomizerSetUpSubState extends ScriptedMusicBeatSubState
         currentSettings = randomizer.scriptGet("currentSettings");
         currentSettings["trueRandomDirections"] = false;
 
-        camera = new FunkinCamera("Randomizer Set Up State Camera", 0, 0, FlxG.width, FlxG.height);
+        setupCamera = new FunkinCamera("Randomizer Set Up State Camera", 0, 0, FlxG.width, FlxG.height);
 
-        FlxG.cameras.add(camera);
-        this.cameras = [camera];
+        FlxG.cameras.add(setupCamera, true);
+        this.cameras = [setupCamera];
 
         var background = new FunkinSprite(0, 0);
         background.makeSolidColor(FlxG.width, FlxG.height, 0xFF000000);
@@ -105,7 +105,7 @@ class RandomizerSetUpSubState extends ScriptedMusicBeatSubState
     public function exit():Void
     {
         randomizer.scriptSet("ranSetUpMenu", true);
-        FlxG.cameras.remove(camera);
+        FlxG.cameras.remove(setupCamera);
         PlayState.instance.closeSubState();
         PlayState.instance.startCountdown();
     }

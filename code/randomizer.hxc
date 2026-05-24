@@ -47,7 +47,6 @@ class Randomizer extends Module
     public var currentPreset = null;
 
     public var modFolderPath;
-    public var mobile = null;
 
     public var usingPreset = false;
 
@@ -73,12 +72,6 @@ class Randomizer extends Module
         if (save != null) currentSettings = save.copy();
 
         if (!Std.isOfType(event.targetState, MainMenuState)) return;
-
-        if (mobile == null)
-        {
-            mobile = event.targetState.backButton != null;
-            if (!mobile) modFolderPath = getModFolderPath();
-        }
     }
 
     public function onCountdownStart(event):Void
@@ -115,7 +108,7 @@ class Randomizer extends Module
 
     public function setUp():Void
     {
-        if (save["activeText"])
+        if (currentSettings["activeText"])
         {
             var activeText = new FlxText(1085, 360, -1, "Note Randomizer Status: ON", 16);
 
@@ -146,7 +139,7 @@ class Randomizer extends Module
 
         var modeText = new FlxText(1125, 360, -1, "Mode: CURRENT SETTINGS", 16);
 
-        if (save["activeText"])
+        if (currentSettings["activeText"])
         {
             if (currentSettings["trueRandomDirections"])
             {
@@ -223,7 +216,7 @@ class Randomizer extends Module
         noteData.data = randomizer.int(range[0], range[1], ignoreList);
 
         addNoteToNoteQueue(noteData, noteDataList, noteQueue);
-        setNoteBiases(noteData, noteBiases);
+        setNoteBiases(noteData, noteBiases, range);
 
         noteDataList.push(noteData);
         if (currentSettings["debug"]) trace("NOTE GENERATED: " + Std.string(noteData.data));
@@ -663,7 +656,7 @@ class Randomizer extends Module
     override function onSongEnd(event)
     {
 
-        if (randomizerActive && !mobile && !ranSaveChartPrompt && currentSettings["saveChartPrompt"])
+        if (randomizerActive && !ranSaveChartPrompt && currentSettings["saveChartPrompt"])
         {
             PlayState.instance.openSubState(ScriptedMusicBeatSubState.init("SaveChartSubState"));
             event.cancel();
@@ -696,6 +689,8 @@ class Randomizer extends Module
             var metadata = Json.parse(FileUtil.readStringFromPath(fullPath + "/_polymod_meta.json"));
 
             if (metadata.title != "FNF Note Randomizer") continue;
+
+            if (currentSettings != null && currentSettings["debug"]) trace("MOD PATH: " + fullPath);
 
             return fullPath;
         }

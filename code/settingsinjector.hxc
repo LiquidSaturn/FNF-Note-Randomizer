@@ -150,10 +150,10 @@ class RandomizerSettingsInjector extends Module
         createPrefItemNumber("Note Queue Time (Doubles)", "The amount of time that notes found in doubles are queued after being generated before being allowed to generate again", (value:Float) -> {setSaveKey("doubleNoteQueueRemovalTime", value);}, save["doubleNoteQueueRemovalTime"], 0.01, 2);
         createPrefItemNumber("Note Queue Time (Triples)", "The amount of time that notes found in triples are queued after being generated before being allowed to generate again", (value:Float) -> {setSaveKey("tripleNoteQueueRemovalTime", value);}, save["tripleNoteQueueRemovalTime"], 0.01, 2);
 
-        addCategory("Note Bias");
+        //addCategory("Note Bias");
 
-        createPrefItemPercentage("Note Bias Increase", "How much the likelihood of a note being allowed the possibility to generate will be INCREASED each time it is NOT generated", (value:Float) -> {setSaveKey("noteBiasIncrease", value);}, save["noteBiasIncrease"], -100, 100, 1);
-        createPrefItemPercentage("Note Bias Decrease", "How much the likelihood of a note being allowed the possibility to generate will be DECREASED each time it IS generated", (value:Float) -> {setSaveKey("noteBiasDecrease", value);}, save["noteBiasDecrease"], -100, 100, 1);
+        //createPrefItemPercentage("Note Bias Increase", "How much the likelihood of a note being allowed the possibility to generate will be INCREASED each time it is NOT generated", (value:Float) -> {setSaveKey("noteBiasIncrease", value);}, save["noteBiasIncrease"], -100, 100, 1);
+        //createPrefItemPercentage("Note Bias Decrease", "How much the likelihood of a note being allowed the possibility to generate will be DECREASED each time it IS generated", (value:Float) -> {setSaveKey("noteBiasDecrease", value);}, save["noteBiasDecrease"], -100, 100, 1);
 
         addCategory("Note Pattern Limits");
 

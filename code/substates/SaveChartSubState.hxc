@@ -25,7 +25,7 @@ class SaveChartSubState extends ScriptedMusicBeatSubState
 
     var namingChartSave = false;
 
-    var camera;
+    var saveCamera;
     var textList;
 
     var saveText;
@@ -41,9 +41,9 @@ class SaveChartSubState extends ScriptedMusicBeatSubState
 
         randomizer = ModuleHandler.getModule("FNF Note Randomizer");
 
-        camera = new FunkinCamera("Save Chart SubState Camera", 0, 0, FlxG.width, FlxG.height);
-        FlxG.cameras.add(camera, true);
-        this.cameras = [camera];
+        saveCamera = new FunkinCamera("Save Chart SubState Camera", 0, 0, FlxG.width, FlxG.height);
+        FlxG.cameras.add(saveCamera, true);
+        this.cameras = [saveCamera];
 
         var background = new FunkinSprite(0, 0);
         background.makeSolidColor(FlxG.width, FlxG.height, 0xFF000000);
