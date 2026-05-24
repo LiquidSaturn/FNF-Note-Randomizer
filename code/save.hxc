@@ -12,7 +12,7 @@ class RandomizerSave extends Module
         "debug" => false,
 
         "openSetUpSubState" => true,
-        "saveChartPrompt" => true,
+        "saveChartPrompt" => false,
 
         "trueRandomDirections" => false,
         "trueRandomStackNotes" => false,

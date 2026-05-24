@@ -43,10 +43,6 @@ class RandomizerSetUpSubState extends ScriptedMusicBeatSubState
 
         randomizer = ModuleHandler.getModule("FNF Note Randomizer");
 
-        chartFolder = randomizer.scriptGet("modFolderPath") + "/chartsaves/" + PlayState.instance.currentSong.id + "-" + PlayState.instance.currentVariation + "-" + PlayState.instance.currentDifficulty;
-        if (FileUtil.directoryExists(chartFolder)) savedCharts = [for (file in FileUtil.readDir(chartFolder)) if (StringTools.endsWith(file, ".json") && FileUtil.fileExists(chartFolder + "/" + file)) StringTools.replace(file, ".json", "")];
-        else savedCharts = [];
-
         currentSettings = randomizer.scriptGet("currentSettings");
         currentSettings["trueRandomDirections"] = false;
 
@@ -255,7 +251,6 @@ class SetUpLoadPresetSubState extends ScriptedMusicBeatSubState
 {
 
     var state;
-    var camera;
 
     var randomizer;
 
